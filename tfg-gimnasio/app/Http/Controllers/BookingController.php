@@ -74,7 +74,7 @@ class BookingController extends Controller
         // Cargamos los alumnos usando la relación que definimos en el modelo
         $students = $activity->students;
 
-        return view('activities.students', compact('activity', $students));
+        return view('activities.students', compact('activity', 'students'));
     }
 
 }
