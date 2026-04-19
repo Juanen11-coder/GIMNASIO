@@ -28,3 +28,12 @@ Route::get('/login-as/{user}', [AuthController::class, 'loginAs'])->name('login.
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/actividad/{activity}/alumnos', [BookingController::class, 'showStudents'])->name('activities.students');
+
+use App\Http\Controllers\SocialController;
+
+Route::get('/feed', [SocialController::class, 'feed'])->name('feed');
+Route::get('/perfil/{id}', [SocialController::class, 'perfil'])->name('perfil.show');
+Route::get('/chats', [SocialController::class, 'chats'])->name('chats.index');
+Route::get('/chat/{conversationId}', [SocialController::class, 'chat'])->name('chat.show');
+Route::post('/chat/{conversationId}', [SocialController::class, 'sendMessage'])->name('chat.send');
+Route::post('/post', [SocialController::class, 'createPost'])->name('post.create');
