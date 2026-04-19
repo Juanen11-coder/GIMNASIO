@@ -18,9 +18,12 @@ class SocialController extends Controller
     }
     private function writeJson($filename, $data)
     {
-
         $path = storage_path('app/public/data/' . $filename);
-        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
+        $result = file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
+
+        if ($result === false) {
+            throw new \Exception("No se pudo guardar el archivo: $filename");
+        }
     }
 
     public function feed()
@@ -77,9 +80,9 @@ class SocialController extends Controller
         }
 
         // 4. Filtrar posts del usuario
-        $userPosts = array_filter($posts, function ($post) use ($id) {
+        $userPosts = array_values(array_filter($posts, function ($post) use ($id) {
             return $post['user_id'] == $id;
-        });
+        }));
 
         // 5. Ordenar posts
         usort($userPosts, function ($a, $b) {
@@ -94,7 +97,7 @@ class SocialController extends Controller
         ];
 
         // 7. Enviar a la vista
-        return view('social.perfil', compact('user', 'userPosts', 'stats'));
+        return view('social.perfil', compact('user', 'userPosts', 'stats')) -> with('currentUserId', 1);
     }
     public function chats()
     {
@@ -123,7 +126,7 @@ class SocialController extends Controller
             }
             $conv['other_user'] = $usersById[$otherUserId] ?? null;
         }
-
+        unset($conv);
         return view('social.chats', compact('myConversations'));
     }
     public function sendMessage(Request $request, $conversationId)
@@ -136,10 +139,12 @@ class SocialController extends Controller
         ]);
 
         $chatsData = $this->readJson('chats.json');
+        // En vez de contar, buscar el ID más alto y sumar 1
+        $maxId = empty($posts) ? 0 : max(array_column($posts, 'id'));
 
         // Crear nuevo mensaje
         $newMessage = [
-            'id' => count($chatsData['messages']) + 1,
+            'id' => $maxId + 1,
             'conversation_id' => (int) $conversationId,
             'user_id' => $currentUserId,
             'message' => $request->message,
@@ -261,4 +266,4 @@ class SocialController extends Controller
         // Pasar datos a la vista
         return view('social.chat', compact('conversation', 'messages', 'otherUser'));
     }
-};
+}
