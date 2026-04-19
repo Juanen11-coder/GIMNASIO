@@ -1,30 +1,30 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SocialController;  // ← ESTA LÍNEA ES IMPORTANTE
+use App\Http\Controllers\BookingController;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AuthController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
-// ============================================
-// RUTAS PARA LA PARTE SOCIAL
-// ============================================
+Route::get('/login-test', function () {
+    Auth::loginUsingId(1);
+    return "Logueado. Ve a /actividades";
+});
 
-// Mostrar el feed de publicaciones
-Route::get('/feed', [SocialController::class, 'feed'])->name('feed');
+Route::get('/actividades', [BookingController::class, 'index'])->name('activities.index');
 
-// Mostrar el perfil de un usuario (ej: /perfil/1)
-Route::get('/perfil/{id}', [SocialController::class, 'perfil'])->name('perfil.show');
+Route::group([],function () {
+    Route::get('/reservar', [BookingController::class, 'createActivity'])->name('activities.create');
+    // Nota: El nombre del método en el controlador debe coincidir (storeActivity)
+    Route::post('/reservar', [BookingController::class, 'storeActivity'])->name('activities.store');
+    Route::post('/actividades/{activity}/apuntarse', [BookingController::class, 'enroll'])->name('activities.enroll');
+});
 
-// Mostrar la lista de chats
-Route::get('/chats', [SocialController::class, 'chats'])->name('chats.index');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::get('/login-as/{user}', [AuthController::class, 'loginAs'])->name('login.as');
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Mostrar una conversación específica (ej: /chat/1)
-Route::get('/chat/{conversationId}', [SocialController::class, 'chat'])->name('chat.show');
-
-// Enviar un mensaje (cuando el usuario envía el formulario)
-Route::post('/chat/{conversationId}', [SocialController::class, 'sendMessage'])->name('chat.send');
-
-// Crear una nueva publicación (cuando el usuario envía el formulario)
-Route::post('/post', [SocialController::class, 'createPost'])->name('post.create');
+Route::get('/actividad/{activity}/alumnos', [BookingController::class, 'showStudents'])->name('activities.students');

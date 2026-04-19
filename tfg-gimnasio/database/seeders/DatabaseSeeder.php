@@ -15,11 +15,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Crear Espacios
+        \App\Models\Space::create(['name' => 'Gimnasio Principal', 'capacity' => 30]);
+        \App\Models\Space::create(['name' => 'Sala de Yoga', 'capacity' => 15]);
+        \App\Models\Space::create(['name' => 'Pista de Pádel', 'capacity' => 4]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Crear un Profesor de prueba
+        \App\Models\User::create([
+            'name' => 'Profesor Juan',
+            'email' => 'juan@profe.com',
+            'password' => bcrypt('123456'),
+            'role' => 'teacher'
         ]);
+
+        // Crear un Alumno de prueba
+        foreach (['Pedro', 'Ana', 'Luis'] as $nombre) {
+            \App\Models\User::create([
+                'name' => 'Alumno ' . $nombre,
+                'email' => strtolower($nombre) . '@alumno.com',
+                'password' => bcrypt('123456'),
+                'role' => 'student'
+            ]);
+        }
+
     }
 }
