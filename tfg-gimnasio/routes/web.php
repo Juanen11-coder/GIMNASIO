@@ -77,7 +77,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // API para obtener ejercicios por grupo muscular
-Route::get('/api/ejercicios-por-grupo/{grupoId}', function($grupoId) {
+Route::get('/api/ejercicios-por-grupo/{grupoId}', function ($grupoId) {
     return \App\Models\EjercicioPredefinido::where('grupo_muscular_id', $grupoId)->get();
 });
 
@@ -89,8 +89,11 @@ Route::get('/ofertas', [PageController::class, 'ofertas'])->name('ofertas');
 
 Route::get('/tienda', [PageController::class, 'tienda'])->name('tienda');
 
-Route::get('/api/ejercicios-por-musculo/{musculoId}', function($musculoId) {
+Route::get('/api/ejercicios-por-musculo/{musculoId}', function ($musculoId) {
     return App\Models\EjercicioPredefinido::where('musculo_id', $musculoId)
         ->select('id', 'nombre')
         ->get();
 });
+Route::delete('/post/{post}', [SocialController::class, 'deletePost'])->name('post.delete');
+Route::get('/mis-rutinas', [SocialController::class, 'misRutinas'])->name('mis.rutinas');
+Route::delete('/rutina/{rutina}', [RutinaController::class, 'deleteRutina'])->name('eliminar.rutina');

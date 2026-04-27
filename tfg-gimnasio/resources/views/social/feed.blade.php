@@ -22,12 +22,20 @@
                         class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
 
-            <form action="{{ route('post.create') }}" method="POST" id="entrenamientoForm">
+            {{-- IMPORTANTE: Añadir enctype="multipart/form-data" --}}
+            <form action="{{ route('post.create') }}" method="POST" id="entrenamientoForm" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Descripción general --}}
                 <textarea name="content" rows="2" class="w-full border rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           placeholder="¿Qué tal fue tu entrenamiento? (opcional)"></textarea>
+
+                {{-- CAMPO PARA SUBIR FOTO --}}
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">📷 Subir foto (opcional)</label>
+                    <input type="file" name="image" accept="image/*" class="w-full border rounded-lg p-2">
+                    <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, GIF. Máx 2MB</p>
+                </div>
 
                 {{-- Sección de ejercicios dinámicos --}}
                 <div class="bg-gray-50 rounded-lg p-3 mb-3">
@@ -123,6 +131,14 @@
                     <p class="text-gray-800 mb-3">{{ $post->content }}</p>
                 @endif
 
+                {{-- MOSTRAR IMAGEN SI EXISTE --}}
+                @if($post->image)
+                    <div class="mb-3">
+                        <img src="{{ Storage::url($post->image) }}" alt="Imagen del entrenamiento"
+                             class="w-full rounded-lg object-cover max-h-96">
+                    </div>
+                @endif
+
                 {{-- Detalles del entrenamiento (ejercicios) --}}
                 @if($post->detalles && $post->detalles->count() > 0)
                     <div class="bg-gray-50 rounded-lg p-3 mb-3">
@@ -164,18 +180,15 @@
 </div>
 
 <script>
+    let ejercicioIndex = {{ isset($posts) ? $posts->first()?->detalles->count() ?? 1 : 1 }};
+
     // Función para cargar ejercicios
     function cargarEjercicios(musculoSelect) {
-        // Obtener el contenedor del ejercicio
         const ejercicioItem = musculoSelect.closest('.ejercicio-item');
         const ejercicioSelect = ejercicioItem.querySelector('.ejercicio-select');
         const musculoOtro = ejercicioItem.querySelector('.musculo-otro');
-
         const musculoId = musculoSelect.value;
 
-        console.log('Músculo seleccionado:', musculoId);
-
-        // Si selecciona "otro"
         if (musculoId === 'otro') {
             musculoOtro.classList.remove('hidden');
             ejercicioSelect.innerHTML = '<option value="">-- Seleccionar ejercicio --</option><option value="otro">+ Otro ejercicio</option>';
@@ -183,23 +196,18 @@
             return;
         }
 
-        // Ocultar campo "otro músculo"
         musculoOtro.classList.add('hidden');
 
-        // Si no hay músculo seleccionado
         if (!musculoId) {
             ejercicioSelect.innerHTML = '<option value="">-- Seleccionar ejercicio --</option>';
             ejercicioSelect.disabled = true;
             return;
         }
 
-        // Cargar ejercicios desde la API
         ejercicioSelect.innerHTML = '<option>Cargando...</option>';
-
         fetch(`/api/ejercicios-por-musculo/${musculoId}`)
             .then(response => response.json())
             .then(data => {
-                console.log('Ejercicios:', data);
                 ejercicioSelect.innerHTML = '<option value="">-- Seleccionar ejercicio --</option>';
                 data.forEach(ejercicio => {
                     ejercicioSelect.innerHTML += `<option value="${ejercicio.id}">${ejercicio.nombre}</option>`;
@@ -213,18 +221,13 @@
             });
     }
 
-    // Configurar eventos cuando la página carga
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Página cargada');
-
-        // Configurar todos los selects de músculo
         document.querySelectorAll('.musculo-select').forEach(select => {
             select.addEventListener('change', function() {
                 cargarEjercicios(this);
             });
         });
 
-        // Configurar botones eliminar
         document.querySelectorAll('.remove-ejercicio').forEach(btn => {
             btn.addEventListener('click', function() {
                 this.closest('.ejercicio-item').remove();
@@ -232,7 +235,6 @@
         });
     });
 
-    // Añadir nuevo ejercicio
     document.getElementById('addEjercicioBtn').addEventListener('click', function() {
         const container = document.getElementById('ejercicios-container');
         const newIndex = document.querySelectorAll('.ejercicio-item').length;
@@ -274,7 +276,6 @@
 
         container.appendChild(nuevoItem);
 
-        // Configurar eventos del nuevo item
         nuevoItem.querySelector('.musculo-select').addEventListener('change', function() {
             cargarEjercicios(this);
         });
