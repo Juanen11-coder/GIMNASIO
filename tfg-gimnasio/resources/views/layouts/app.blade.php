@@ -60,6 +60,9 @@
                             <a href="{{ route('chats.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
                                 💬 Chat
                             </a>
+                            <a href="{{ route('friends.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                                👥 Amigos
+                            </a>
                             <a href="{{ route('feed') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
                                 💪 Entrenamientos
                             </a>
@@ -96,6 +99,9 @@
                             </a>
                             <a href="{{ route('feed') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
                                 📱 Mi Feed
+                            </a>
+                            <a href="{{ route('friends.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                                👥 Mis Amigos
                             </a>
                             <a href="{{ route('chats.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
                                 💬 Chats

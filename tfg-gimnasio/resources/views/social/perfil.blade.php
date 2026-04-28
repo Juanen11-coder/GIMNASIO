@@ -11,10 +11,11 @@
 
                 {{-- Avatar --}}
                 @if (isset($user) && $user)
-                    @if($user->avatar)
+                    @if ($user->avatar)
                         <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-24 h-24 rounded-full object-cover">
                     @else
-                        <div class="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold">
+                        <div
+                            class="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold">
                             {{ substr($user->name, 0, 1) }}
                         </div>
                     @endif
@@ -43,17 +44,65 @@
                     @endif
                 </div>
 
-                {{-- Botón seguir / Mi feed --}}
-                @if (auth()->check() && isset($user) && $user->id != auth()->id())
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                        + Seguir
-                    </button>
-                @elseif(auth()->check() && isset($user) && $user->id == auth()->id())
-                    <a href="{{ route('feed') }}"
-                        class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
-                        📱 Mi feed
-                    </a>
-                @endif
+                {{-- Botón de amistad / Mi feed --}}
+                @auth
+                    @if (auth()->id() != $user->id)
+                        @php
+                            $friendship = \App\Models\Friendship::where(function($q) use ($user) {
+                                $q->where('user_id', auth()->id())->where('friend_id', $user->id);
+                            })->orWhere(function($q) use ($user) {
+                                $q->where('user_id', $user->id)->where('friend_id', auth()->id());
+                            })->first();
+                        @endphp
+
+                        @if($friendship)
+                            @if($friendship->status == 'pending')
+                                @if($friendship->user_id == auth()->id())
+                                    <button disabled class="bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed">
+                                        ⏳ Solicitud enviada
+                                    </button>
+                                @else
+                                    <div class="flex gap-2">
+                                        <form action="{{ route('friends.accept', $friendship) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                                                ✅ Aceptar
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('friends.decline', $friendship) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                                                ❌ Rechazar
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            @elseif($friendship->status == 'accepted')
+                                <button disabled class="bg-green-600 text-white px-4 py-2 rounded-lg cursor-not-allowed">
+                                    ✓ Amigos
+                                </button>
+                            @endif
+                        @else
+                            <form action="{{ route('friends.request', $user) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                                    + Agregar amigo
+                                </button>
+                            </form>
+                        @endif
+                    @else
+                        <div class="flex gap-2">
+                            <a href="{{ route('feed') }}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition">
+                                📱 Mi feed
+                            </a>
+                            <a href="{{ route('friends.index') }}" class="bg-indigo-100 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-200 transition">
+                                👥 Mis amigos
+                            </a>
+                        </div>
+                    @endif
+                @endauth
             </div>
         </div>
 
@@ -75,6 +124,14 @@
                                 </button>
                             @endif
                         </div>
+
+                        {{-- Mostrar imagen si existe --}}
+                        @if ($post->image)
+                            <div class="mb-3">
+                                <img src="{{ Storage::url($post->image) }}" alt="Imagen del entrenamiento"
+                                    class="w-full rounded-lg object-cover max-h-96">
+                            </div>
+                        @endif
 
                         {{-- Mostrar detalles del entrenamiento --}}
                         @if ($post->detalles && $post->detalles->count() > 0)
@@ -121,8 +178,7 @@
 
     {{-- Modal de nueva publicación (solo en tu propio perfil) --}}
     @if (auth()->check() && isset($user) && $user->id == auth()->id())
-        <div id="createPostModal"
-            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div id="createPostModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold">🏋️ Compartir entreno</h3>

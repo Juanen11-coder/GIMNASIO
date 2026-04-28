@@ -88,8 +88,9 @@
 {{-- ========== MODALES ========== --}}
 
 {{-- Modal añadir día --}}
-<div id="addDiaModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 w-96">
+<div id="addDiaModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-6 w-96">
         <h3 class="text-lg font-bold mb-4">Añadir día de entrenamiento</h3>
         <form action="{{ route('rutinas.add-dia', $rutina->id) }}" method="POST">
             @csrf
@@ -101,11 +102,13 @@
             </div>
         </form>
     </div>
+    </div>
 </div>
 
 {{-- Modal añadir grupo muscular --}}
-<div id="addGrupoModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 w-96">
+<div id="addGrupoModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg p-6 w-96">
         <h3 class="text-lg font-bold mb-4">Añadir grupo muscular</h3>
         <form id="addGrupoForm" method="POST">
             @csrf
@@ -125,6 +128,7 @@
                 <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Añadir</button>
             </div>
         </form>
+    </div>
     </div>
 </div>
 

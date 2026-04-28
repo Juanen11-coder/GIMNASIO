@@ -29,5 +29,19 @@ class Post extends Model
 {
     return $this->hasMany(DetalleEntrenamiento::class);
 }
+public function likes()
+{
+    return $this->hasMany(Like::class);
+}
 
+public function isLikedByUser($userId = null)
+{
+    $userId = $userId ?? auth()->id();
+    return $this->likes()->where('user_id', $userId)->exists();
+}
+
+public function getLikesCountAttribute()
+{
+    return $this->likes()->count();
+}
 }

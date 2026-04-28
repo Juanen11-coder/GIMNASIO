@@ -9,6 +9,9 @@ use App\Models\EjercicioPredefinido;
 use App\Models\DetalleEntrenamiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use App\Models\Like;
 
 
 class SocialController extends Controller
@@ -44,12 +47,13 @@ class SocialController extends Controller
      */
     public function feed()
     {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         $posts = Post::with('user', 'detalles.musculo')
-            ->where('user_id', auth()->id())
+            ->withCount('likes')
+            ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -85,11 +89,11 @@ class SocialController extends Controller
      */
     public function chats()
     {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        $currentUserId = auth()->id();
+        $currentUserId = Auth::id();
 
         // Obtener conversaciones de la BD (cuando estén implementadas)
         // Por ahora, como no tienes chats en BD, puedes mostrarlos vacíos
@@ -104,58 +108,38 @@ class SocialController extends Controller
      */
     public function chat($conversationId)
     {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        $currentUserId = auth()->id();
+        $currentUserId = Auth::id();
 
-        $chatsData = $this->readJson('chats.json');
-        $users = $this->readJson('users.json');
-
-        $usersById = [];
-        foreach ($users as $user) {
-            $usersById[$user['id']] = $user;
+        // Verificar si el usuario con conversationId existe
+        $friend = User::find($conversationId);
+        if (!$friend) {
+            return redirect()->route('friends.index')->with('error', 'Usuario no encontrado.');
         }
 
-        $conversation = null;
-        foreach ($chatsData['conversations'] as $conv) {
-            if ($conv['id'] == $conversationId) {
-                $conversation = $conv;
-                break;
-            }
+        // Verificar si son amigos
+        if (!Auth::user()->isFriendWith($friend)) {
+            return redirect()->route('friends.index')->with('error', 'Solo puedes chatear con amigos.');
         }
 
-        if (!$conversation) {
-            abort(404, 'Conversación no encontrada');
-        }
+        // Datos básicos para la vista (por ahora sin mensajes reales)
+        $otherUser = [
+            'id' => $friend->id,
+            'name' => $friend->name,
+            'avatar' => $friend->avatar ? asset('storage/' . $friend->avatar) : asset('images/default-avatar.png')
+        ];
 
-        if (!in_array($currentUserId, $conversation['participants'])) {
-            abort(403, 'No tienes acceso a esta conversación');
-        }
+        $messages = []; // Por ahora vacío, después implementar mensajes reales
 
-        $messages = array_filter($chatsData['messages'], function ($msg) use ($conversationId) {
-            return $msg['conversation_id'] == $conversationId;
-        });
+        $conversation = [
+            'id' => $conversationId,
+            'participants' => [Auth::id(), $friend->id]
+        ];
 
-        usort($messages, function ($a, $b) {
-            return strtotime($a['created_at']) - strtotime($b['created_at']);
-        });
-
-        foreach ($messages as &$msg) {
-            $msg['user'] = $usersById[$msg['user_id']] ?? null;
-        }
-
-        $otherUserId = null;
-        foreach ($conversation['participants'] as $pId) {
-            if ($pId != $currentUserId) {
-                $otherUserId = $pId;
-                break;
-            }
-        }
-        $otherUser = $usersById[$otherUserId] ?? null;
-
-        return view('social.chat', compact('conversation', 'messages', 'otherUser'));
+        return view('social.chat', compact('otherUser', 'messages', 'conversation'));
     }
 
     /**
@@ -163,11 +147,22 @@ class SocialController extends Controller
      */
     public function sendMessage(Request $request, $conversationId)
     {
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        $currentUserId = auth()->id();
+        $currentUserId = Auth::id();
+
+        // Verificar si el usuario con conversationId existe
+        $friend = User::find($conversationId);
+        if (!$friend) {
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado.']);
+        }
+
+        // Verificar si son amigos
+        if (!Auth::user()->isFriendWith($friend)) {
+            return response()->json(['success' => false, 'message' => 'Solo puedes enviar mensajes a amigos.']);
+        }
 
         $request->validate([
             'message' => 'required|string|max:1000'
@@ -208,88 +203,88 @@ class SocialController extends Controller
     /**
      * Crea una nueva publicación
      */
-public function createPost(Request $request)
-{
+    public function createPost(Request $request)
+    {
 
-    if (!auth()->check()) {
-        return redirect()->route('login');
-    }
-
-    // Depuración - ver qué está llegando
-    \Log::info('Datos del formulario:', $request->all());
-    \Log::info('Archivos:', $request->files->all());
-
-    $validator = validator($request->all(), [
-        'content' => 'nullable|string|max:1000',
-        'ejercicios' => 'required|array|min:1',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-    ]);
-
-    if ($validator->fails()) {
-        \Log::error('Error de validación:', $validator->errors()->all());
-        return back()->withErrors($validator)->withInput();
-    }
-
-    // ... resto del código
-
-    if (!auth()->check()) {
-        return redirect()->route('login');
-    }
-
-    $request->validate([
-        'content' => 'nullable|string|max:1000',
-        'ejercicios' => 'required|array|min:1',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-    ]);
-
-    // Subir imagen si existe
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('posts', 'public');
-    }
-
-    // Crear el post
-    $post = Post::create([
-        'user_id' => auth()->id(),
-        'content' => $request->content ?? 'Entrenamiento completado 💪',
-        'image' => $imagePath,
-        'likes' => 0,
-        'comments_count' => 0,
-    ]);
-
-    // Guardar los ejercicios
-    foreach ($request->ejercicios as $ejercicioData) {
-        // Determinar el nombre del ejercicio
-        if (isset($ejercicioData['ejercicio_otro']) && $ejercicioData['ejercicio_otro']) {
-            $nombreEjercicio = $ejercicioData['ejercicio_otro'];
-        } elseif (isset($ejercicioData['ejercicio_id']) && $ejercicioData['ejercicio_id']) {
-            $ejercicioPredefinido = EjercicioPredefinido::find($ejercicioData['ejercicio_id']);
-            $nombreEjercicio = $ejercicioPredefinido ? $ejercicioPredefinido->nombre : 'Ejercicio';
-        } else {
-            $nombreEjercicio = 'Ejercicio';
+        if (!Auth::check()) {
+            return redirect()->route('login');
         }
 
-        // Determinar el ID del músculo
-        if (isset($ejercicioData['musculo_otro']) && $ejercicioData['musculo_otro']) {
-            $musculo = Musculo::firstOrCreate(['nombre' => $ejercicioData['musculo_otro']]);
-            $musculoId = $musculo->id;
-        } else {
-            $musculoId = $ejercicioData['musculo_id'] ?? null;
+        // Depuración - ver qué está llegando
+        Log::info('Datos del formulario:', $request->all());
+        Log::info('Archivos:', $request->files->all());
+
+        $validator = validator($request->all(), [
+            'content' => 'nullable|string|max:1000',
+            'ejercicios' => 'required|array|min:1',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            Log::error('Error de validación:', $validator->errors()->all());
+            return back()->withErrors($validator)->withInput();
         }
 
-        if ($musculoId) {
-            $post->detalles()->create([
-                'musculo_id' => $musculoId,
-                'ejercicio' => $nombreEjercicio,
-                'series' => $ejercicioData['series'] ?? null,
-                'repeticiones' => $ejercicioData['repeticiones'] ?? null,
-                'peso' => $ejercicioData['peso'] ?? null,
-            ]);
+        // ... resto del código
+
+        if (!Auth::check()) {
+            return redirect()->route('login');
         }
+
+        $request->validate([
+            'content' => 'nullable|string|max:1000',
+            'ejercicios' => 'required|array|min:1',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Subir imagen si existe
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('posts', 'public');
+        }
+
+        // Crear el post
+        $post = Post::create([
+            'user_id' => Auth::id(),
+            'content' => $request->content ?? 'Entrenamiento completado 💪',
+            'image' => $imagePath,
+            'likes' => 0,
+            'comments_count' => 0,
+        ]);
+
+        // Guardar los ejercicios
+        foreach ($request->ejercicios as $ejercicioData) {
+            // Determinar el nombre del ejercicio
+            if (isset($ejercicioData['ejercicio_otro']) && $ejercicioData['ejercicio_otro']) {
+                $nombreEjercicio = $ejercicioData['ejercicio_otro'];
+            } elseif (isset($ejercicioData['ejercicio_id']) && $ejercicioData['ejercicio_id']) {
+                $ejercicioPredefinido = EjercicioPredefinido::find($ejercicioData['ejercicio_id']);
+                $nombreEjercicio = $ejercicioPredefinido ? $ejercicioPredefinido->nombre : 'Ejercicio';
+            } else {
+                $nombreEjercicio = 'Ejercicio';
+            }
+
+            // Determinar el ID del músculo
+            if (isset($ejercicioData['musculo_otro']) && $ejercicioData['musculo_otro']) {
+                $musculo = Musculo::firstOrCreate(['nombre' => $ejercicioData['musculo_otro']]);
+                $musculoId = $musculo->id;
+            } else {
+                $musculoId = $ejercicioData['musculo_id'] ?? null;
+            }
+
+            if ($musculoId) {
+                $post->detalles()->create([
+                    'musculo_id' => $musculoId,
+                    'ejercicio' => $nombreEjercicio,
+                    'series' => $ejercicioData['series'] ?? null,
+                    'repeticiones' => $ejercicioData['repeticiones'] ?? null,
+                    'peso' => $ejercicioData['peso'] ?? null,
+                ]);
+            }
+        }
+
+        return redirect()->route('feed')->with('success', '¡Entrenamiento publicado!');
     }
-
-    return redirect()->route('feed')->with('success', '¡Entrenamiento publicado!');
-}
 
     /**
      * Elimina una publicación
@@ -297,7 +292,7 @@ public function createPost(Request $request)
     public function deletePost(Post $post)
     {
         // Verificar que el usuario es el dueño del post
-        if ($post->user_id != auth()->id()) {
+        if ($post->user_id != Auth::id()) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
@@ -309,4 +304,42 @@ public function createPost(Request $request)
 
         return response()->json(['success' => true]);
     }
+
+public function toggleLike(Post $post)
+{
+    Log::info('Entrando a toggleLike para post: ' . $post->id);
+
+    if (!Auth::check()) {
+        Log::info('Usuario no autenticado');
+        return response()->json(['success' => false, 'message' => 'No autorizado'], 401);
+    }
+
+    Log::info('Usuario autenticado: ' . Auth::id());
+
+    $existingLike = Like::where('user_id', Auth::id())
+        ->where('post_id', $post->id)
+        ->first();
+
+    if ($existingLike) {
+        Log::info('Eliminando like existente');
+        $existingLike->delete();
+        $liked = false;
+    } else {
+        Log::info('Creando nuevo like');
+        Like::create([
+            'user_id' => Auth::id(),
+            'post_id' => $post->id,
+        ]);
+        $liked = true;
+    }
+
+    $likesCount = $post->likes()->count();
+    Log::info('Likes count: ' . $likesCount);
+
+    return response()->json([
+        'success' => true,
+        'liked' => $liked,
+        'likes_count' => $likesCount
+    ]);
+}
 }

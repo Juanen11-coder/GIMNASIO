@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SocialController;
+use App\Http\Controllers\FriendshipController;
 
 // Rutas públicas (sin autenticación)
 Route::get('/', function () {
@@ -33,6 +34,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/chat/{conversationId}', [SocialController::class, 'chat'])->name('chat.show');
     Route::post('/chat/{conversationId}', [SocialController::class, 'sendMessage'])->name('chat.send');
     Route::post('/post', [SocialController::class, 'createPost'])->name('post.create');
+
+    // Rutas de amigos
+    Route::get('/friends', [FriendshipController::class, 'index'])->name('friends.index');
+    Route::get('/friends/search', [FriendshipController::class, 'search'])->name('friends.search');
+    Route::get('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request.get'); // Temporal para testing
+    Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
+    Route::post('/friends/{friendship}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
+    Route::post('/friends/{friendship}/reject', [FriendshipController::class, 'rejectRequest'])->name('friends.reject');
+    Route::delete('/friends/{friendship}/cancel', [FriendshipController::class, 'cancelRequest'])->name('friends.cancel');
 });
 
 use App\Http\Controllers\PageController;
@@ -97,3 +107,5 @@ Route::get('/api/ejercicios-por-musculo/{musculoId}', function ($musculoId) {
 Route::delete('/post/{post}', [SocialController::class, 'deletePost'])->name('post.delete');
 Route::get('/mis-rutinas', [SocialController::class, 'misRutinas'])->name('mis.rutinas');
 Route::delete('/rutina/{rutina}', [RutinaController::class, 'deleteRutina'])->name('eliminar.rutina');
+
+Route::post('/post/{post}/like', [SocialController::class, 'toggleLike'])->name('post.like');
