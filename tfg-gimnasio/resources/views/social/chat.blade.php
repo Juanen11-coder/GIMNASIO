@@ -27,6 +27,19 @@
         </div>
     </div>
 
+    {{-- Mensajes de éxito/error --}}
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Contenedor de mensajes --}}
     <div id="messages-container"
          class="bg-white rounded-xl shadow-md p-4 mb-4 h-96 overflow-y-auto">
@@ -34,14 +47,15 @@
         @if(isset($messages) && count($messages) > 0)
             @foreach($messages as $message)
                 @php
-                    $isMine = ($message['user_id'] == 1); // Temporal: usuario logueado = 1
+                    $isMine = ($message->sender_id == auth()->id());
+                    $user = $isMine ? $message->receiver : $message->sender;
                 @endphp
 
                 <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }} mb-3">
 
                     {{-- Avatar del otro usuario (solo si no es mío) --}}
-                    @if(!$isMine && isset($message['user']['avatar']))
-                        <img src="{{ $message['user']['avatar'] }}"
+                    @if(!$isMine)
+                        <img src="{{ $user->avatar ? asset('storage/' . $user->avatar) : 'https://ui-avatars.com/api/?background=gray&color=fff&name=' . urlencode($user->name) }}"
                              class="w-8 h-8 rounded-full mr-2 self-end">
                     @endif
 
@@ -49,16 +63,16 @@
                     <div class="max-w-[70%]">
                         <div class="{{ $isMine ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-800' }}
                                     rounded-lg px-4 py-2">
-                            <p class="text-sm">{{ $message['message'] }}</p>
+                            <p class="text-sm">{{ $message->message }}</p>
                         </div>
                         <p class="text-xs text-gray-400 mt-1 text-{{ $isMine ? 'right' : 'left' }}">
-                            {{ \Carbon\Carbon::parse($message['created_at'])->format('H:i') }}
+                            {{ $message->created_at->format('H:i') }}
                         </p>
                     </div>
 
                     {{-- Avatar mío (solo si es mío) --}}
                     @if($isMine)
-                        <img src="https://ui-avatars.com/api/?background=6366f1&color=fff&name=Tú"
+                        <img src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?background=6366f1&color=fff&name=' . urlencode(auth()->user()->name) }}"
                              class="w-8 h-8 rounded-full ml-2 self-end">
                     @endif
                 </div>
@@ -72,7 +86,7 @@
 
     {{-- Formulario para enviar mensaje --}}
     <div class="bg-white rounded-xl shadow-md p-4">
-        <form action="{{ route('chat.send', $conversation['id'] ?? 1) }}"
+        <form action="{{ route('chat.send', $conversationId) }}"
               method="POST"
               class="flex gap-2">
             @csrf

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -42,7 +41,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -100,8 +99,10 @@ class User extends Authenticatable
         })->where('status', 'pending')->exists();
     }
 
-    public function rutinas()
+
+
+    public function likes()
     {
-        return $this->hasMany(Rutina::class);
+        return $this->hasMany(Like::class);
     }
 }

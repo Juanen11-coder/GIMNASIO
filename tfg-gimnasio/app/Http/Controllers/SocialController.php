@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Post;
 use App\Models\Musculo;
+use App\Models\Message;
+use App\Models\Like;
 use App\Models\EjercicioPredefinido;
 use App\Models\DetalleEntrenamiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Models\Like;
-
+use App\Models\Friendship;
 
 class SocialController extends Controller
 {
@@ -67,7 +68,6 @@ class SocialController extends Controller
      */
     public function perfil($id)
     {
-        // Buscar usuario en la BD, no en JSON
         $user = User::findOrFail($id);
 
         $userPosts = Post::with('detalles.musculo')
@@ -95,138 +95,146 @@ class SocialController extends Controller
 
         $currentUserId = Auth::id();
 
-        // Obtener conversaciones de la BD (cuando estén implementadas)
-        // Por ahora, como no tienes chats en BD, puedes mostrarlos vacíos
+        $conversations = Message::where('sender_id', $currentUserId)
+            ->orWhere('receiver_id', $currentUserId)
+            ->with(['sender', 'receiver'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy(function($message) use ($currentUserId) {
+                return $message->sender_id == $currentUserId ? $message->receiver_id : $message->sender_id;
+            })
+            ->map(function($messages, $friendId) use ($currentUserId) {
+                $friend = $messages->first()->sender_id == $currentUserId
+                    ? $messages->first()->receiver
+                    : $messages->first()->sender;
 
-        $myConversations = []; // Temporal
+                $lastMessage = $messages->first();
+                $unreadCount = $messages->where('receiver_id', $currentUserId)->whereNull('read_at')->count();
 
-        return view('social.chats', compact('myConversations'));
+                return [
+                    'friend' => $friend,
+                    'last_message' => $lastMessage,
+                    'unread_count' => $unreadCount,
+                    'updated_at' => $lastMessage->created_at
+                ];
+            })
+            ->sortByDesc('updated_at')
+            ->values();
+
+        return view('social.chats', compact('conversations'));
     }
 
     /**
      * Muestra una conversación específica
      */
-    public function chat($conversationId)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $currentUserId = Auth::id();
-
-        // Verificar si el usuario con conversationId existe
-        $friend = User::find($conversationId);
-        if (!$friend) {
-            return redirect()->route('friends.index')->with('error', 'Usuario no encontrado.');
-        }
-
-        // Verificar si son amigos
-        if (!Auth::user()->isFriendWith($friend)) {
-            return redirect()->route('friends.index')->with('error', 'Solo puedes chatear con amigos.');
-        }
-
-        // Datos básicos para la vista (por ahora sin mensajes reales)
-        $otherUser = [
-            'id' => $friend->id,
-            'name' => $friend->name,
-            'avatar' => $friend->avatar ? asset('storage/' . $friend->avatar) : asset('images/default-avatar.png')
-        ];
-
-        $messages = []; // Por ahora vacío, después implementar mensajes reales
-
-        $conversation = [
-            'id' => $conversationId,
-            'participants' => [Auth::id(), $friend->id]
-        ];
-
-        return view('social.chat', compact('otherUser', 'messages', 'conversation'));
+  /**
+ * Muestra una conversación específica
+ */
+public function chat($friendId)
+{
+    if (!Auth::check()) {
+        return redirect()->route('login');
     }
+
+    $currentUser = Auth::user();
+    $friend = User::findOrFail($friendId);
+
+    // Verificar amistad
+    $isFriend = Friendship::where(function($query) use ($currentUser, $friend) {
+        $query->where('user_id', $currentUser->id)->where('friend_id', $friend->id);
+    })->orWhere(function($query) use ($currentUser, $friend) {
+        $query->where('user_id', $friend->id)->where('friend_id', $currentUser->id);
+    })->where('status', 'accepted')->exists();
+
+    if (!$isFriend) {
+        return redirect()->route('chats.index')->with('error', 'Solo puedes chatear con amigos.');
+    }
+
+    // Obtener mensajes
+    $messages = Message::where(function($query) use ($currentUser, $friend) {
+        $query->where('sender_id', $currentUser->id)->where('receiver_id', $friend->id);
+    })->orWhere(function($query) use ($currentUser, $friend) {
+        $query->where('sender_id', $friend->id)->where('receiver_id', $currentUser->id);
+    })->with(['sender', 'receiver'])
+      ->orderBy('created_at', 'asc')
+      ->get();
+
+    // Marcar mensajes como leídos
+    Message::where('sender_id', $friend->id)
+        ->where('receiver_id', $currentUser->id)
+        ->whereNull('read_at')
+        ->update(['read_at' => now()]);
+
+    // Preparar datos para la vista
+    $otherUser = [
+        'id' => $friend->id,
+        'name' => $friend->name,
+        'avatar' => $friend->avatar ?? 'https://ui-avatars.com/api/?background=6366f1&color=fff&name=' . urlencode($friend->name)
+    ];
+
+    $conversationId = $friendId; // ← ESTA ES LA LÍNEA CLAVE
+
+    return view('social.chat', compact('otherUser', 'messages', 'conversationId'));
+}
 
     /**
      * Envía un mensaje en una conversación
      */
-    public function sendMessage(Request $request, $conversationId)
-    {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $currentUserId = Auth::id();
-
-        // Verificar si el usuario con conversationId existe
-        $friend = User::find($conversationId);
-        if (!$friend) {
-            return response()->json(['success' => false, 'message' => 'Usuario no encontrado.']);
-        }
-
-        // Verificar si son amigos
-        if (!Auth::user()->isFriendWith($friend)) {
-            return response()->json(['success' => false, 'message' => 'Solo puedes enviar mensajes a amigos.']);
-        }
-
-        $request->validate([
-            'message' => 'required|string|max:1000'
-        ]);
-
-        $chatsData = $this->readJson('chats.json');
-
-        $messages = $chatsData['messages'] ?? [];
-        $maxId = empty($messages) ? 0 : max(array_column($messages, 'id'));
-
-        $newMessage = [
-            'id' => $maxId + 1,
-            'conversation_id' => (int) $conversationId,
-            'user_id' => $currentUserId,
-            'message' => $request->message,
-            'created_at' => date('c')
-        ];
-
-        $chatsData['messages'][] = $newMessage;
-
-        foreach ($chatsData['conversations'] as &$conv) {
-            if ($conv['id'] == $conversationId) {
-                $conv['last_message'] = $request->message;
-                $conv['last_message_time'] = date('c');
-                break;
-            }
-        }
-
-        $this->writeJson('chats.json', $chatsData);
-
-        return redirect()->route('chat.show', $conversationId)
-            ->with('success', 'Mensaje enviado');
+/**
+ * Envía un mensaje en una conversación
+ */
+public function sendMessage(Request $request, $friendId)
+{
+    if (!Auth::check()) {
+        return redirect()->route('login');
     }
 
-    /**
-     * Crea una nueva publicación
-     */
+    $currentUser = Auth::user(); // ← Obtener el objeto User
+    $friend = User::find($friendId);
+
+    if (!$friend) {
+        return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
+    }
+
+    // Verificar amistad DIRECTAMENTE (evitando el método)
+    $isFriend = Friendship::where(function($query) use ($currentUser, $friend) {
+        $query->where('user_id', $currentUser->id)->where('friend_id', $friend->id);
+    })->orWhere(function($query) use ($currentUser, $friend) {
+        $query->where('user_id', $friend->id)->where('friend_id', $currentUser->id);
+    })->where('status', 'accepted')->exists();
+
+    if (!$isFriend) {
+        return back()->with('error', 'Solo puedes enviar mensajes a amigos.');
+    }
+
+    $request->validate([
+        'message' => 'required|string|max:1000'
+    ]);
+
+    Log::info('SendMessage called', [
+        'sender_id' => $currentUser->id,
+        'receiver_id' => $friendId,
+        'message' => $request->message
+    ]);
+
+    // Crear el mensaje
+    $message = Message::create([
+        'sender_id' => $currentUser->id,
+        'receiver_id' => $friendId,
+        'message' => $request->message
+    ]);
+
+    Log::info('Message created', ['message_id' => $message->id]);
+
+    return redirect()->route('chat.show', $friendId)
+        ->with('success', 'Mensaje enviado correctamente');
+}
+
     /**
      * Crea una nueva publicación
      */
     public function createPost(Request $request)
     {
-
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        // Depuración - ver qué está llegando
-        Log::info('Datos del formulario:', $request->all());
-        Log::info('Archivos:', $request->files->all());
-
-        $validator = validator($request->all(), [
-            'content' => 'nullable|string|max:1000',
-            'ejercicios' => 'required|array|min:1',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            Log::error('Error de validación:', $validator->errors()->all());
-            return back()->withErrors($validator)->withInput();
-        }
-
-        // ... resto del código
-
         if (!Auth::check()) {
             return redirect()->route('login');
         }
@@ -254,7 +262,6 @@ class SocialController extends Controller
 
         // Guardar los ejercicios
         foreach ($request->ejercicios as $ejercicioData) {
-            // Determinar el nombre del ejercicio
             if (isset($ejercicioData['ejercicio_otro']) && $ejercicioData['ejercicio_otro']) {
                 $nombreEjercicio = $ejercicioData['ejercicio_otro'];
             } elseif (isset($ejercicioData['ejercicio_id']) && $ejercicioData['ejercicio_id']) {
@@ -264,7 +271,6 @@ class SocialController extends Controller
                 $nombreEjercicio = 'Ejercicio';
             }
 
-            // Determinar el ID del músculo
             if (isset($ejercicioData['musculo_otro']) && $ejercicioData['musculo_otro']) {
                 $musculo = Musculo::firstOrCreate(['nombre' => $ejercicioData['musculo_otro']]);
                 $musculoId = $musculo->id;
@@ -291,55 +297,54 @@ class SocialController extends Controller
      */
     public function deletePost(Post $post)
     {
-        // Verificar que el usuario es el dueño del post
         if ($post->user_id != Auth::id()) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 
-        // Eliminar primero los detalles (ejercicios asociados)
         $post->detalles()->delete();
-
-        // Eliminar el post
         $post->delete();
 
         return response()->json(['success' => true]);
     }
 
-public function toggleLike(Post $post)
-{
-    Log::info('Entrando a toggleLike para post: ' . $post->id);
+    /**
+     * Marcar o desmarcar like en una publicación
+     */
+    public function toggleLike(Post $post)
+    {
+        Log::info('Entrando a toggleLike para post: ' . $post->id);
 
-    if (!Auth::check()) {
-        Log::info('Usuario no autenticado');
-        return response()->json(['success' => false, 'message' => 'No autorizado'], 401);
-    }
+        if (!Auth::check()) {
+            Log::info('Usuario no autenticado');
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 401);
+        }
 
-    Log::info('Usuario autenticado: ' . Auth::id());
+        Log::info('Usuario autenticado: ' . Auth::id());
 
-    $existingLike = Like::where('user_id', Auth::id())
-        ->where('post_id', $post->id)
-        ->first();
+        $existingLike = Like::where('user_id', Auth::id())
+            ->where('post_id', $post->id)
+            ->first();
 
-    if ($existingLike) {
-        Log::info('Eliminando like existente');
-        $existingLike->delete();
-        $liked = false;
-    } else {
-        Log::info('Creando nuevo like');
-        Like::create([
-            'user_id' => Auth::id(),
-            'post_id' => $post->id,
+        if ($existingLike) {
+            Log::info('Eliminando like existente');
+            $existingLike->delete();
+            $liked = false;
+        } else {
+            Log::info('Creando nuevo like');
+            Like::create([
+                'user_id' => Auth::id(),
+                'post_id' => $post->id,
+            ]);
+            $liked = true;
+        }
+
+        $likesCount = $post->likes()->count();
+        Log::info('Likes count: ' . $likesCount);
+
+        return response()->json([
+            'success' => true,
+            'liked' => $liked,
+            'likes_count' => $likesCount
         ]);
-        $liked = true;
     }
-
-    $likesCount = $post->likes()->count();
-    Log::info('Likes count: ' . $likesCount);
-
-    return response()->json([
-        'success' => true,
-        'liked' => $liked,
-        'likes_count' => $likesCount
-    ]);
-}
 }

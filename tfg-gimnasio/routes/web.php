@@ -54,37 +54,9 @@ Route::get('/inscribete', [PageController::class, 'offers'])->name('offers');
 Route::get('/contacto', [PageController::class, 'contact'])->name('contact');
 
 
-use App\Http\Controllers\RutinaController;
-
-// Rutas de rutinas
-Route::prefix('rutinas')->group(function () {
-    Route::get('/', [RutinaController::class, 'index'])->name('rutinas.index');
-    Route::get('/create', [RutinaController::class, 'create'])->name('rutinas.create');
-    Route::post('/', [RutinaController::class, 'store'])->name('rutinas.store');
-    Route::get('/{rutina}/edit', [RutinaController::class, 'edit'])->name('rutinas.edit');
-    Route::post('/{rutina}/add-dia', [RutinaController::class, 'addDia'])->name('rutinas.add-dia');
-    Route::post('/dia/{dia}/add-grupo', [RutinaController::class, 'addGrupo'])->name('rutinas.add-grupo');
-    Route::post('/grupo/{grupo}/add-ejercicio', [RutinaController::class, 'addEjercicio'])->name('rutinas.add-ejercicio');
-    Route::post('/{rutina}/publish', [RutinaController::class, 'publish'])->name('rutinas.publish');
-});
 
 
-// Rutas para rutinas (protegidas por auth)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/rutinas', [RutinaController::class, 'index'])->name('rutinas.index');
-    Route::get('/rutinas/create', [RutinaController::class, 'create'])->name('rutinas.create');
-    Route::post('/rutinas', [RutinaController::class, 'store'])->name('rutinas.store');
-    Route::get('/rutinas/{rutina}/edit', [RutinaController::class, 'edit'])->name('rutinas.edit');
-    Route::post('/rutinas/{rutina}/add-dia', [RutinaController::class, 'addDia'])->name('rutinas.add-dia');
-    Route::post('/rutinas/dia/{dia}/add-grupo', [RutinaController::class, 'addGrupo'])->name('rutinas.add-grupo');
-    Route::post('/rutinas/grupo/{grupo}/add-ejercicio', [RutinaController::class, 'addEjercicio'])->name('rutinas.add-ejercicio');
-    Route::post('/rutinas/{rutina}/publish', [RutinaController::class, 'publish'])->name('rutinas.publish');
 
-    // Eliminar rutas
-    Route::delete('/rutinas/dia/{dia}', [RutinaController::class, 'deleteDia'])->name('rutinas.delete-dia');
-    Route::delete('/rutinas/grupo/{grupo}', [RutinaController::class, 'deleteGrupo'])->name('rutinas.delete-grupo');
-    Route::delete('/rutinas/ejercicio/{ejercicio}', [RutinaController::class, 'deleteEjercicio'])->name('rutinas.delete-ejercicio');
-});
 
 // API para obtener ejercicios por grupo muscular
 Route::get('/api/ejercicios-por-grupo/{grupoId}', function ($grupoId) {
@@ -105,7 +77,6 @@ Route::get('/api/ejercicios-por-musculo/{musculoId}', function ($musculoId) {
         ->get();
 });
 Route::delete('/post/{post}', [SocialController::class, 'deletePost'])->name('post.delete');
-Route::get('/mis-rutinas', [SocialController::class, 'misRutinas'])->name('mis.rutinas');
-Route::delete('/rutina/{rutina}', [RutinaController::class, 'deleteRutina'])->name('eliminar.rutina');
+
 
 Route::post('/post/{post}/like', [SocialController::class, 'toggleLike'])->name('post.like');

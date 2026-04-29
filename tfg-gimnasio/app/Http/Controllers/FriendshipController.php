@@ -165,4 +165,26 @@ class FriendshipController extends Controller
 
     return back()->with('success', 'Solicitud rechazada');
 }
+/**
+ * Cancela una solicitud de amistad enviada
+ */
+public function cancelRequest(Friendship $friendship)
+{
+    $currentUser = Auth::user();
+
+    // Verificar que el usuario actual es quien envió la solicitud
+    if ($friendship->user_id != $currentUser->id) {
+        return back()->with('error', 'No autorizado');
+    }
+
+    // Verificar que la solicitud está pendiente
+    if ($friendship->status != 'pending') {
+        return back()->with('error', 'Esta solicitud ya no se puede cancelar');
+    }
+
+    // Eliminar la solicitud
+    $friendship->delete();
+
+    return back()->with('success', 'Solicitud cancelada');
+}
 }
