@@ -11,173 +11,188 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; }
-        .menu-dropdown {
-            transition: all 0.3s ease;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .menu-dropdown.hidden {
-            display: none;
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #121212;
+            color: #FFFFFF;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E1E1E;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00E676;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00c853;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #0a0a0a;
+            border-bottom: 1px solid #2a2a2a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-link {
+            color: #888;
+            transition: color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: #00E676;
+        }
+
+        .nav-link.active {
+            color: #00E676;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00E676 0%, #00c853 100%);
+            color: #000;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
+        }
+
+        .btn-outline {
+            border: 1px solid #00E676;
+            color: #00E676;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            text-align: center;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: #00E676;
+            color: #000;
+        }
+
+        /* Tarjetas */
+        .card {
+            background: #1E1E1E;
+            border-radius: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #2a2a2a;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border-color: #00E676;
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3">
+    <nav class="navbar">
+        <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
+                {{-- Logo --}}
+                <a href="{{ route('home') }}" class="text-2xl font-black tracking-tight">
+                    GYM<span class="text-[#00E676]">TONIC</span>
+                </a>
 
-                {{-- Botón menú desplegable (izquierda) --}}
-                <div class="relative">
-                    <button id="menuBtn" class="text-gray-700 hover:text-indigo-600 text-2xl focus:outline-none">
-                        ☰
-                    </button>
-
-                    {{-- Menú desplegable según si está logueado o no --}}
-                    <div id="dropdownMenu" class="menu-dropdown hidden absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
-                        @guest
-                            {{-- Menú para invitados (no logueados) --}}
-                            <a href="{{ route('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                🏠 Inicio
-                            </a>
-                            <a href="{{ route('inscribete') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                📝 Inscríbete
-                            </a>
-                            <a href="{{ route('sobre-nosotros') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                📖 Sobre nosotros
-                            </a>
-                            <a href="{{ route('ofertas') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                🏷️ Ofertas
-                            </a>
-                        @else
-                            {{-- Menú para usuarios logueados --}}
-                            <a href="{{ route('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                🏠 Inicio
-                            </a>
-                            <a href="{{ route('activities.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                📅 Reservas
-                            </a>
-                            <a href="{{ route('chats.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                💬 Chat
-                            </a>
-                            <a href="{{ route('friends.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                👥 Amigos
-                            </a>
-                            <a href="{{ route('feed') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                💪 Entrenamientos
-                            </a>
-                            <a href="{{ route('tienda') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                🛒 Tienda
-                            </a>
-                        @endguest
-                    </div>
-                </div>
-
-                {{-- Título del gimnasio (centro) --}}
-                <div class="absolute left-1/2 transform -translate-x-1/2">
-                    <a href="{{ route('home') }}" class="text-xl font-bold text-indigo-600">
-                        🏋️ GYM TONIC
-                    </a>
-                </div>
-
-                {{-- Foto de perfil (derecha) --}}
-                <div class="relative">
+                {{-- Menú central --}}
+                <div class="hidden md:flex gap-8">
                     @auth
-                        <button id="perfilBtn" class="focus:outline-none">
+                        <a href="{{ route('home') }}" class="nav-link">Inicio</a>
+                        <a href="{{ route('feed') }}" class="nav-link">Feed</a>
+                        <a href="{{ route('chats.index') }}" class="nav-link">Chats</a>
+                        <a href="{{ route('activities.index') }}" class="nav-link">Actividades</a>
+                        <a href="{{ route('friends.index') }}" class="nav-link">Amigos</a>
+                    @else
+                        <a href="{{ route('home') }}" class="nav-link">Inicio</a>
+                        <a href="{{ route('inscribete') }}" class="nav-link">Inscríbete</a>
+                        <a href="{{ route('sobre-nosotros') }}" class="nav-link">Sobre nosotros</a>
+                        <a href="{{ route('ofertas') }}" class="nav-link">Ofertas</a>
+                    @endauth
+                </div>
+
+                {{-- Botones derecha --}}
+                <div class="flex gap-3">
+                    @auth
+                        <a href="{{ route('perfil.show', auth()->id()) }}" class="flex items-center gap-2">
                             @if(auth()->user()->avatar)
-                                <img src="{{ auth()->user()->avatar }}" alt="Perfil" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-600">
+                                <img src="{{ auth()->user()->avatar }}" class="w-10 h-10 rounded-full object-cover border-2 border-[#00E676]">
                             @else
-                                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                                <div class="w-10 h-10 rounded-full bg-[#00E676] flex items-center justify-center text-black font-bold">
                                     {{ substr(auth()->user()->name, 0, 1) }}
                                 </div>
                             @endif
-                        </button>
-
-                        <div id="perfilMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                            <a href="{{ route('perfil.show', auth()->id()) }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                👤 Mi Perfil
-                            </a>
-                            <a href="{{ route('feed') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                📱 Mi Feed
-                            </a>
-                            <a href="{{ route('friends.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                👥 Mis Amigos
-                            </a>
-                            <a href="{{ route('chats.index') }}" class="block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
-                                💬 Chats
-                            </a>
-                            <hr class="my-1">
-                            <form action="{{ route('logout') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">
-                                    🚪 Cerrar sesión
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <a href="{{ route('login') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                            Iniciar sesión
                         </a>
+                        <form action="{{ route('logout') }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="btn-outline text-sm py-2 px-4">Salir</button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="btn-outline text-sm py-2 px-4">Iniciar sesión</a>
+                        <a href="{{ route('register.show') }}" class="btn-primary text-sm py-2 px-4">Registrarse</a>
                     @endauth
                 </div>
             </div>
         </div>
     </nav>
 
-    <main>
+    <main class="py-8">
         @yield('content')
     </main>
 
-    <footer class="bg-gray-900 text-white py-8 mt-12">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex gap-6">
-                    <a href="#" class="text-gray-400 hover:text-indigo-400 text-2xl transition"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-indigo-400 text-2xl transition"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-indigo-400 text-2xl transition"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-indigo-400 text-2xl transition"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-indigo-400 text-2xl transition"><i class="fab fa-tiktok"></i></a>
-                </div>
-                <div class="text-center md:text-right">
-                    <p class="text-gray-400"><i class="fas fa-phone mr-2"></i> +34 123 456 789</p>
-                    <p class="text-gray-500 text-sm mt-1">📍 C/ Ejemplo, 1 - Madrid</p>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-6 pt-6 text-center text-gray-500 text-sm">
-                <p>&copy; 2025 GYM TONIC. Todos los derechos reservados.</p>
-            </div>
+    <footer class="bg-[#0a0a0a] border-t border-[#2a2a2a] mt-12 py-8">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2025 <span class="text-[#00E676] font-semibold">GYM TONIC</span>. Proyecto desarrollado por Juanen, Pablo y Miguel Ángel</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        // Menú desplegable izquierdo
-        const menuBtn = document.getElementById('menuBtn');
-        const dropdownMenu = document.getElementById('dropdownMenu');
-
-        if (menuBtn) {
-            menuBtn.addEventListener('click', () => {
-                dropdownMenu.classList.toggle('hidden');
-            });
-        }
-
-        // Menú de perfil
-        const perfilBtn = document.getElementById('perfilBtn');
-        const perfilMenu = document.getElementById('perfilMenu');
-
-        if (perfilBtn) {
-            perfilBtn.addEventListener('click', () => {
-                perfilMenu.classList.toggle('hidden');
-            });
-        }
-
-        // Cerrar menús al hacer clic fuera
-        document.addEventListener('click', (event) => {
-            if (menuBtn && !menuBtn.contains(event.target) && dropdownMenu) {
-                dropdownMenu.classList.add('hidden');
-            }
-            if (perfilBtn && !perfilBtn.contains(event.target) && perfilMenu) {
-                perfilMenu.classList.add('hidden');
+        // Marcar enlace activo
+        document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.href === window.location.href) {
+                link.classList.add('active');
             }
         });
     </script>

@@ -3,162 +3,178 @@
 @section('title', 'Feed de Entrenos')
 
 @section('content')
-    <div class="container mx-auto px-4 py-8 max-w-2xl">
+<div class="container mx-auto px-4 py-8 max-w-2xl">
 
-        {{-- Botón para crear publicación --}}
-        <div class="flex justify-end mb-6">
-            <button onclick="document.getElementById('createPostModal').classList.remove('hidden')"
-                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                + Nueva Publicación
-            </button>
-        </div>
+    {{-- Botón para crear publicación --}}
+    <div class="flex justify-end mb-6">
+        <button onclick="document.getElementById('createPostModal').classList.remove('hidden')"
+            class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-6 py-3 rounded-xl transition transform hover:scale-105">
+            <i class="fas fa-plus mr-2"></i> Nueva Publicación
+        </button>
+    </div>
 
-        {{-- MODAL AVANZADO PARA PUBLICAR ENTRENAMIENTO --}}
-        <div id="createPostModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white mb-10">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">🏋️ Compartir entrenamiento</h3>
-                    <button onclick="document.getElementById('createPostModal').classList.add('hidden')"
-                        class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    {{-- MODAL PARA PUBLICAR ENTRENAMIENTO --}}
+    <div id="createPostModal" class="hidden fixed inset-0 bg-black bg-opacity-90 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-6 border-0 w-full max-w-2xl shadow-2xl rounded-2xl bg-[#1E1E1E] mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">🏋️ Compartir entrenamiento</h3>
+                <button onclick="document.getElementById('createPostModal').classList.add('hidden')"
+                        class="text-gray-400 hover:text-white text-3xl">&times;</button>
+            </div>
+
+            <form action="{{ route('post.create') }}" method="POST" id="entrenamientoForm" enctype="multipart/form-data">
+                @csrf
+
+                <textarea name="content" rows="2"
+                    class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-3 mb-4 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676]"
+                    placeholder="¿Qué tal fue tu entrenamiento? (opcional)"></textarea>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">📷 Subir foto (opcional)</label>
+                    <input type="file" name="image" accept="image/*"
+                        class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-2 text-white file:mr-2 file:py-1 file:px-3 file:rounded-lg file:bg-[#00E676] file:text-black file:border-0">
+                    <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, GIF. Máx 2MB</p>
                 </div>
 
-                <form action="{{ route('post.create') }}" method="POST" id="entrenamientoForm" enctype="multipart/form-data">
-                    @csrf
-
-                    <textarea name="content" rows="2"
-                        class="w-full border rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="¿Qué tal fue tu entrenamiento? (opcional)"></textarea>
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">📷 Subir foto (opcional)</label>
-                        <input type="file" name="image" accept="image/*" class="w-full border rounded-lg p-2">
-                        <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, GIF. Máx 2MB</p>
-                    </div>
-
-                    <div class="bg-gray-50 rounded-lg p-3 mb-3">
-                        <h4 class="font-semibold mb-2">📋 Ejercicios realizados</h4>
-                        <div id="ejercicios-container">
-                            <div class="ejercicio-item bg-white rounded-lg p-3 mb-2 shadow-sm">
-                                <div class="grid grid-cols-12 gap-2 items-center">
-                                    <div class="col-span-3">
-                                        <select name="ejercicios[0][musculo_id]" class="musculo-select w-full border rounded-lg p-2 text-sm">
-                                            <option value="">-- Músculo --</option>
-                                            @foreach ($musculos as $musculo)
-                                                <option value="{{ $musculo->id }}">{{ $musculo->nombre }}</option>
-                                            @endforeach
-                                            <option value="otro">+ Otro músculo</option>
-                                        </select>
-                                        <input type="text" name="ejercicios[0][musculo_otro]"
-                                            class="musculo-otro hidden w-full border rounded-lg p-2 text-sm mt-1"
-                                            placeholder="Nombre del músculo">
-                                    </div>
-                                    <div class="col-span-3">
-                                        <select name="ejercicios[0][ejercicio_id]" class="ejercicio-select w-full border rounded-lg p-2 text-sm" disabled>
-                                            <option value="">-- Seleccionar ejercicio --</option>
-                                        </select>
-                                        <input type="text" name="ejercicios[0][ejercicio_otro]"
-                                            class="ejercicio-otro hidden w-full border rounded-lg p-2 text-sm mt-1"
-                                            placeholder="Ejercicio personalizado">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" name="ejercicios[0][series]" placeholder="Series" class="w-full border rounded-lg p-2 text-sm">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <input type="number" name="ejercicios[0][repeticiones]" placeholder="Reps" class="w-full border rounded-lg p-2 text-sm">
-                                    </div>
-                                    <div class="col-span-1">
-                                        <input type="number" step="0.5" name="ejercicios[0][peso]" placeholder="Kg" class="w-full border rounded-lg p-2 text-sm">
-                                    </div>
-                                    <div class="col-span-1 text-center">
-                                        <button type="button" class="remove-ejercicio text-red-500 hover:text-red-700">🗑️</button>
-                                    </div>
+                {{-- Sección de ejercicios dinámicos --}}
+                <div class="bg-[#2A2A2A] rounded-xl p-4 mb-4">
+                    <h4 class="font-semibold text-white mb-3">📋 Ejercicios realizados</h4>
+                    <div id="ejercicios-container">
+                        <div class="ejercicio-item bg-[#1E1E1E] rounded-lg p-3 mb-3 border border-[#3A3A3A]">
+                            <div class="grid grid-cols-12 gap-2 items-center">
+                                <div class="col-span-3">
+                                    <select name="ejercicios[0][musculo_id]"
+                                        class="musculo-select w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                                        <option value="">-- Músculo --</option>
+                                        @foreach($musculos as $musculo)
+                                            <option value="{{ $musculo->id }}">{{ $musculo->nombre }}</option>
+                                        @endforeach
+                                        <option value="otro">+ Otro músculo</option>
+                                    </select>
+                                    <input type="text" name="ejercicios[0][musculo_otro]"
+                                        class="musculo-otro hidden w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm mt-1"
+                                        placeholder="Nombre del músculo">
+                                </div>
+                                <div class="col-span-3">
+                                    <select name="ejercicios[0][ejercicio_id]"
+                                        class="ejercicio-select w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm" disabled>
+                                        <option value="">-- Seleccionar ejercicio --</option>
+                                    </select>
+                                    <input type="text" name="ejercicios[0][ejercicio_otro]"
+                                        class="ejercicio-otro hidden w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm mt-1"
+                                        placeholder="Ejercicio personalizado">
+                                </div>
+                                <div class="col-span-2">
+                                    <input type="number" name="ejercicios[0][series]" placeholder="Series"
+                                        class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                                </div>
+                                <div class="col-span-2">
+                                    <input type="number" name="ejercicios[0][repeticiones]" placeholder="Reps"
+                                        class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                                </div>
+                                <div class="col-span-1">
+                                    <input type="number" step="0.5" name="ejercicios[0][peso]" placeholder="Kg"
+                                        class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                                </div>
+                                <div class="col-span-1 text-center">
+                                    <button type="button" class="remove-ejercicio text-red-500 hover:text-red-400">🗑️</button>
                                 </div>
                             </div>
                         </div>
-                        <button type="button" id="addEjercicioBtn" class="mt-2 text-indigo-600 hover:text-indigo-800 text-sm">
-                            + Añadir ejercicio
+                    </div>
+                    <button type="button" id="addEjercicioBtn"
+                        class="mt-2 text-[#00E676] hover:text-[#00c853] text-sm font-semibold">
+                        + Añadir ejercicio
+                    </button>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-[#00E676] hover:bg-[#00c853] text-black font-bold py-3 rounded-xl transition transform hover:scale-[1.02]">
+                    📤 Publicar entrenamiento
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{-- LISTA DE PUBLICACIONES --}}
+    @if(isset($posts) && count($posts) > 0)
+        @foreach($posts as $post)
+            <div class="bg-[#1E1E1E] rounded-2xl mb-6 overflow-hidden border border-[#2A2A2A] hover:border-[#00E676] transition-all">
+
+                {{-- Cabecera --}}
+                <div class="p-4 border-b border-[#2A2A2A]">
+                    <div class="flex items-center gap-3">
+                        @if($post->user->avatar)
+                            <img src="{{ $post->user->avatar }}" class="w-12 h-12 rounded-full object-cover">
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-[#00E676] flex items-center justify-center text-black font-bold text-lg">
+                                {{ substr($post->user->name, 0, 1) }}
+                            </div>
+                        @endif
+                        <div>
+                            <a href="{{ route('perfil.show', $post->user->id) }}" class="font-semibold text-white hover:text-[#00E676]">
+                                {{ $post->user->name }}
+                            </a>
+                            <p class="text-xs text-gray-500">{{ $post->created_at->diffForHumans() }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Contenido --}}
+                <div class="p-4">
+                    @if($post->content)
+                        <p class="text-gray-200 mb-3">{{ $post->content }}</p>
+                    @endif
+
+                    @if($post->image)
+                        <div class="mb-3 rounded-xl overflow-hidden">
+                            <img src="{{ Storage::url($post->image) }}" class="w-full object-cover max-h-96">
+                        </div>
+                    @endif
+
+                    @if($post->detalles && $post->detalles->count() > 0)
+                        <div class="bg-[#2A2A2A] rounded-xl p-3 mb-3">
+                            <h4 class="font-semibold text-sm text-gray-300 mb-2">📊 Detalles del entrenamiento:</h4>
+                            @foreach($post->detalles->groupBy('musculo.nombre') as $musculoNombre => $ejercicios)
+                                <div class="mb-3">
+                                    <p class="font-medium text-[#00E676] text-sm">{{ $musculoNombre }}</p>
+                                    @foreach($ejercicios as $detalle)
+                                        <p class="text-sm text-gray-400 ml-2">
+                                            • {{ $detalle->ejercicio }}
+                                            @if($detalle->series) · {{ $detalle->series }} series @endif
+                                            @if($detalle->repeticiones) · {{ $detalle->repeticiones }} reps @endif
+                                            @if($detalle->peso) · {{ $detalle->peso }} kg @endif
+                                        </p>
+                                    @endforeach
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    {{-- Botones de interacción --}}
+                    <div class="flex gap-6 text-gray-400 text-sm border-t border-[#2A2A2A] pt-3 mt-2">
+                        <button class="like-btn hover:text-[#00E676] transition flex items-center gap-1" data-post-id="{{ $post->id }}">
+                            <i class="fa-{{ $post->isLikedByUser() ? 'solid' : 'regular' }} fa-heart"></i>
+                            <span class="like-count">{{ $post->likes()->count() }}</span>
+                            <span>Me gusta</span>
+                        </button>
+                        <button class="hover:text-[#00E676] transition flex items-center gap-1">
+                            <i class="fa-regular fa-comment"></i>
+                            <span>{{ $post->comments_count }}</span>
+                            <span>Comentarios</span>
                         </button>
                     </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">
-                        📤 Publicar entrenamiento
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- LISTA DE PUBLICACIONES --}}
-        @if (isset($posts) && count($posts) > 0)
-            @foreach ($posts as $post)
-                <div class="bg-white rounded-xl shadow-md mb-6 overflow-hidden hover:shadow-lg transition">
-
-                    <div class="p-4 border-b">
-                        <div class="flex items-center">
-                            @if ($post->user->avatar)
-                                <img src="{{ $post->user->avatar }}" alt="{{ $post->user->name }}" class="w-12 h-12 rounded-full mr-3">
-                            @else
-                                <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold mr-3">
-                                    {{ substr($post->user->name, 0, 1) }}
-                                </div>
-                            @endif
-                            <div>
-                                <a href="{{ route('perfil.show', $post->user->id) }}" class="font-semibold text-gray-800 hover:text-indigo-600">
-                                    {{ $post->user->name }}
-                                </a>
-                                <p class="text-xs text-gray-400">{{ $post->created_at->diffForHumans() }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-4">
-                        @if ($post->content)
-                            <p class="text-gray-800 mb-3">{{ $post->content }}</p>
-                        @endif
-
-                        @if ($post->image)
-                            <div class="mb-3">
-                                <img src="{{ Storage::url($post->image) }}" alt="Imagen del entrenamiento" class="w-full rounded-lg object-cover max-h-96">
-                            </div>
-                        @endif
-
-                        @if ($post->detalles && $post->detalles->count() > 0)
-                            <div class="bg-gray-50 rounded-lg p-3 mb-3">
-                                <h4 class="font-semibold text-sm text-gray-700 mb-2">📊 Detalles del entrenamiento:</h4>
-                                @foreach ($post->detalles->groupBy('musculo.nombre') as $musculoNombre => $ejercicios)
-                                    <div class="mb-3">
-                                        <p class="font-medium text-indigo-600 text-sm">{{ $musculoNombre }}</p>
-                                        @foreach ($ejercicios as $detalle)
-                                            <p class="text-sm text-gray-600 ml-2">
-                                                • {{ $detalle->ejercicio }}
-                                                @if ($detalle->series) · {{ $detalle->series }} series @endif
-                                                @if ($detalle->repeticiones) · {{ $detalle->repeticiones }} reps @endif
-                                                @if ($detalle->peso) · {{ $detalle->peso }} kg @endif
-                                            </p>
-                                        @endforeach
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <div class="flex gap-4 text-gray-500 text-sm">
-                            <button class="like-btn hover:text-red-500 transition" data-post-id="{{ $post->id }}">
-                                <span class="like-icon">{{ $post->isLikedByUser() ? '❤️' : '🤍' }}</span>
-                                <span class="like-count">{{ $post->likes()->count() }}</span> Me gusta
-                            </button>
-                            <button class="hover:text-indigo-500 transition">
-                                💬 {{ $post->comments_count }} Comentarios
-                            </button>
-                        </div>
-                    </div>
                 </div>
-            @endforeach
-        @else
-            <div class="bg-white rounded-xl shadow-md p-8 text-center text-gray-500">
-                No hay publicaciones aún. ¡Sé el primero en compartir tu entreno!
             </div>
-        @endif
-    </div>
-@endsection
+        @endforeach
+    @else
+        <div class="bg-[#1E1E1E] rounded-2xl p-12 text-center border border-[#2A2A2A]">
+            <i class="fas fa-dumbbell text-5xl text-gray-600 mb-4"></i>
+            <p class="text-gray-500">No hay publicaciones aún. ¡Sé el primero en compartir tu entreno!</p>
+        </div>
+    @endif
+
+</div>
 
 <script>
     let ejercicioIndex = {{ isset($posts) ? $posts->first()?->detalles->count() ?? 1 : 1 }};
@@ -202,7 +218,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar selects de músculo
+        // Selects de músculo
         document.querySelectorAll('.musculo-select').forEach(select => {
             select.addEventListener('change', function() {
                 cargarEjercicios(this);
@@ -216,91 +232,82 @@
             });
         });
 
-        // ========== LIKES ==========
-        const likeButtons = document.querySelectorAll('.like-btn');
-        console.log('✅ Botones de like encontrados:', likeButtons.length);
+        // Botón añadir ejercicio
+        const addBtn = document.getElementById('addEjercicioBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', function() {
+                const container = document.getElementById('ejercicios-container');
+                const newIndex = document.querySelectorAll('.ejercicio-item').length;
 
-        if (likeButtons.length > 0) {
-            likeButtons.forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const postId = this.dataset.postId;
-                    const icon = this.querySelector('.like-icon');
-                    const countSpan = this.querySelector('.like-count');
+                const nuevoItem = document.createElement('div');
+                nuevoItem.className = 'ejercicio-item bg-[#1E1E1E] rounded-lg p-3 mb-3 border border-[#3A3A3A]';
+                nuevoItem.innerHTML = `
+                    <div class="grid grid-cols-12 gap-2 items-center">
+                        <div class="col-span-3">
+                            <select name="ejercicios[${newIndex}][musculo_id]" class="musculo-select w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                                <option value="">-- Músculo --</option>
+                                @foreach($musculos as $musculo)
+                                    <option value="{{ $musculo->id }}">{{ $musculo->nombre }}</option>
+                                @endforeach
+                                <option value="otro">+ Otro músculo</option>
+                            </select>
+                            <input type="text" name="ejercicios[${newIndex}][musculo_otro]" class="musculo-otro hidden w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm mt-1" placeholder="Nombre del músculo">
+                        </div>
+                        <div class="col-span-3">
+                            <select name="ejercicios[${newIndex}][ejercicio_id]" class="ejercicio-select w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm" disabled>
+                                <option value="">-- Seleccionar ejercicio --</option>
+                            </select>
+                            <input type="text" name="ejercicios[${newIndex}][ejercicio_otro]" class="ejercicio-otro hidden w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm mt-1" placeholder="Ejercicio personalizado">
+                        </div>
+                        <div class="col-span-2">
+                            <input type="number" name="ejercicios[${newIndex}][series]" placeholder="Series" class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div class="col-span-2">
+                            <input type="number" name="ejercicios[${newIndex}][repeticiones]" placeholder="Reps" class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div class="col-span-1">
+                            <input type="number" step="0.5" name="ejercicios[${newIndex}][peso]" placeholder="Kg" class="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div class="col-span-1 text-center">
+                            <button type="button" class="remove-ejercicio text-red-500 hover:text-red-400">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(nuevoItem);
 
-                    console.log('👍 Like click en post:', postId);
-
-                    fetch(`/post/${postId}/like`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        credentials: 'same-origin'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            icon.innerHTML = data.liked ? '❤️' : '🤍';
-                            countSpan.textContent = data.likes_count;
-                            console.log('✅ Like actualizado:', data);
-                        } else {
-                            console.error('❌ Error en respuesta:', data.message);
-                        }
-                    })
-                    .catch(error => console.error('❌ Fetch error:', error));
+                nuevoItem.querySelector('.musculo-select').addEventListener('change', function() {
+                    cargarEjercicios(this);
+                });
+                nuevoItem.querySelector('.remove-ejercicio').addEventListener('click', function() {
+                    nuevoItem.remove();
                 });
             });
         }
-    });
 
-    // Añadir nuevo ejercicio
-    document.getElementById('addEjercicioBtn').addEventListener('click', function() {
-        const container = document.getElementById('ejercicios-container');
-        const newIndex = document.querySelectorAll('.ejercicio-item').length;
+        // Likes
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const icon = this.querySelector('i');
+                const countSpan = this.querySelector('.like-count');
 
-        const nuevoItem = document.createElement('div');
-        nuevoItem.className = 'ejercicio-item bg-white rounded-lg p-3 mb-2 shadow-sm';
-        nuevoItem.innerHTML = `
-            <div class="grid grid-cols-12 gap-2 items-center">
-                <div class="col-span-3">
-                    <select name="ejercicios[${newIndex}][musculo_id]" class="musculo-select w-full border rounded-lg p-2 text-sm">
-                        <option value="">-- Músculo --</option>
-                        @foreach ($musculos as $musculo)
-                            <option value="{{ $musculo->id }}">{{ $musculo->nombre }}</option>
-                        @endforeach
-                        <option value="otro">+ Otro músculo</option>
-                    </select>
-                    <input type="text" name="ejercicios[${newIndex}][musculo_otro]" class="musculo-otro hidden w-full border rounded-lg p-2 text-sm mt-1" placeholder="Nombre del músculo">
-                </div>
-                <div class="col-span-3">
-                    <select name="ejercicios[${newIndex}][ejercicio_id]" class="ejercicio-select w-full border rounded-lg p-2 text-sm" disabled>
-                        <option value="">-- Seleccionar ejercicio --</option>
-                    </select>
-                    <input type="text" name="ejercicios[${newIndex}][ejercicio_otro]" class="ejercicio-otro hidden w-full border rounded-lg p-2 text-sm mt-1" placeholder="Ejercicio personalizado">
-                </div>
-                <div class="col-span-2">
-                    <input type="number" name="ejercicios[${newIndex}][series]" placeholder="Series" class="w-full border rounded-lg p-2 text-sm">
-                </div>
-                <div class="col-span-2">
-                    <input type="number" name="ejercicios[${newIndex}][repeticiones]" placeholder="Reps" class="w-full border rounded-lg p-2 text-sm">
-                </div>
-                <div class="col-span-1">
-                    <input type="number" step="0.5" name="ejercicios[${newIndex}][peso]" placeholder="Kg" class="w-full border rounded-lg p-2 text-sm">
-                </div>
-                <div class="col-span-1 text-center">
-                    <button type="button" class="remove-ejercicio text-red-500 hover:text-red-700">🗑️</button>
-                </div>
-            </div>
-        `;
-        container.appendChild(nuevoItem);
-
-        nuevoItem.querySelector('.musculo-select').addEventListener('change', function() {
-            cargarEjercicios(this);
-        });
-        nuevoItem.querySelector('.remove-ejercicio').addEventListener('click', function() {
-            nuevoItem.remove();
+                fetch(`/post/${postId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        icon.className = data.liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                        countSpan.textContent = data.likes_count;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
         });
     });
 </script>
+@endsection

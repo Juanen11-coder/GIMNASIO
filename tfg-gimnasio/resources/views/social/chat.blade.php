@@ -6,20 +6,26 @@
 <div class="container mx-auto px-4 py-8 max-w-2xl">
 
     {{-- Cabecera del chat --}}
-    <div class="bg-white rounded-xl shadow-md mb-4 p-4">
-        <div class="flex items-center">
+    <div class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] mb-4 p-4">
+        <div class="flex items-center gap-3">
             <a href="{{ route('chats.index') }}"
-               class="text-gray-500 mr-3 hover:text-gray-700 text-xl">
+               class="text-gray-400 hover:text-[#00E676] transition text-2xl">
                 ←
             </a>
 
             @if(isset($otherUser) && $otherUser)
-                <img src="{{ $otherUser['avatar'] }}"
-                     alt="{{ $otherUser['name'] }}"
-                     class="w-10 h-10 rounded-full mr-3">
-                <h1 class="text-xl font-bold text-gray-800">{{ $otherUser['name'] }}</h1>
+                @if($otherUser['avatar'])
+                    <img src="{{ $otherUser['avatar'] }}"
+                         alt="{{ $otherUser['name'] }}"
+                         class="w-12 h-12 rounded-full object-cover">
+                @else
+                    <div class="w-12 h-12 rounded-full bg-[#00E676] flex items-center justify-center text-black font-bold text-lg">
+                        {{ substr($otherUser['name'], 0, 1) }}
+                    </div>
+                @endif
+                <h1 class="text-xl font-bold text-white">{{ $otherUser['name'] }}</h1>
             @else
-                <div class="w-10 h-10 rounded-full bg-gray-300 mr-3 flex items-center justify-center text-gray-500">
+                <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-400">
                     ?
                 </div>
                 <h1 class="text-xl font-bold text-gray-500">Usuario desconocido</h1>
@@ -29,20 +35,20 @@
 
     {{-- Mensajes de éxito/error --}}
     @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div class="bg-[#00E676] bg-opacity-20 border border-[#00E676] text-[#00E676] px-4 py-3 rounded-xl mb-4">
             {{ session('success') }}
         </div>
     @endif
 
     @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div class="bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-3 rounded-xl mb-4">
             {{ session('error') }}
         </div>
     @endif
 
     {{-- Contenedor de mensajes --}}
     <div id="messages-container"
-         class="bg-white rounded-xl shadow-md p-4 mb-4 h-96 overflow-y-auto">
+         class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] p-4 mb-4 h-[500px] overflow-y-auto">
 
         @if(isset($messages) && count($messages) > 0)
             @foreach($messages as $message)
@@ -53,51 +59,61 @@
 
                 <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }} mb-3">
 
-                    {{-- Avatar del otro usuario (solo si no es mío) --}}
+                    {{-- Avatar del otro (solo si no es mío) --}}
                     @if(!$isMine)
-                        <img src="{{ $user->avatar ? asset('storage/' . $user->avatar) : 'https://ui-avatars.com/api/?background=gray&color=fff&name=' . urlencode($user->name) }}"
-                             class="w-8 h-8 rounded-full mr-2 self-end">
+                        @if($user->avatar)
+                            <img src="{{ $user->avatar }}" class="w-8 h-8 rounded-full object-cover mr-2 self-end">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold mr-2 self-end">
+                                {{ substr($user->name, 0, 1) }}
+                            </div>
+                        @endif
                     @endif
 
                     {{-- Burbuja del mensaje --}}
                     <div class="max-w-[70%]">
-                        <div class="{{ $isMine ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-800' }}
-                                    rounded-lg px-4 py-2">
+                        <div class="{{ $isMine ? 'bg-[#00E676] text-black' : 'bg-[#2A2A2A] text-white' }}
+                                    rounded-2xl px-4 py-2">
                             <p class="text-sm">{{ $message->message }}</p>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1 text-{{ $isMine ? 'right' : 'left' }}">
+                        <p class="text-xs text-gray-500 mt-1 text-{{ $isMine ? 'right' : 'left' }}">
                             {{ $message->created_at->format('H:i') }}
                         </p>
                     </div>
 
                     {{-- Avatar mío (solo si es mío) --}}
                     @if($isMine)
-                        <img src="{{ auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : 'https://ui-avatars.com/api/?background=6366f1&color=fff&name=' . urlencode(auth()->user()->name) }}"
-                             class="w-8 h-8 rounded-full ml-2 self-end">
+                        @if(auth()->user()->avatar)
+                            <img src="{{ auth()->user()->avatar }}" class="w-8 h-8 rounded-full object-cover ml-2 self-end">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-[#00E676] flex items-center justify-center text-black text-xs font-bold ml-2 self-end">
+                                {{ substr(auth()->user()->name, 0, 1) }}
+                            </div>
+                        @endif
                     @endif
                 </div>
             @endforeach
         @else
-            <div class="text-center text-gray-500 py-8">
-                No hay mensajes aún. ¡Escribe el primero!
+            <div class="text-center text-gray-500 py-12">
+                <i class="fas fa-comment-dots text-4xl mb-3"></i>
+                <p>No hay mensajes aún. ¡Escribe el primero!</p>
             </div>
         @endif
     </div>
 
     {{-- Formulario para enviar mensaje --}}
-    <div class="bg-white rounded-xl shadow-md p-4">
-        <form action="{{ route('chat.send', $conversationId) }}"
-              method="POST"
-              class="flex gap-2">
+    <div class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] p-4">
+        <form action="{{ route('chat.send', $conversationId) }}" method="POST" class="flex gap-3">
             @csrf
             <input type="text"
                    name="message"
-                   class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                   class="flex-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676] transition"
                    placeholder="Escribe un mensaje..."
+                   autocomplete="off"
                    required>
             <button type="submit"
-                    class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
-                Enviar
+                    class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-6 py-3 rounded-xl transition transform hover:scale-105">
+                <i class="fas fa-paper-plane mr-2"></i> Enviar
             </button>
         </form>
     </div>
@@ -108,5 +124,10 @@
     if (container) {
         container.scrollTop = container.scrollHeight;
     }
+
+    // Auto-refresh cada 5 segundos (opcional)
+    setInterval(function() {
+        location.reload();
+    }, 5000);
 </script>
 @endsection
