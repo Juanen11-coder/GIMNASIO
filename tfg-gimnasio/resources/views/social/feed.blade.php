@@ -158,11 +158,30 @@
                             <span class="like-count">{{ $post->likes()->count() }}</span>
                             <span>Me gusta</span>
                         </button>
-                        <button class="hover:text-[#00E676] transition flex items-center gap-1">
+                        <button class="comment-btn hover:text-[#00E676] transition flex items-center gap-1" data-post-id="{{ $post->id }}">
                             <i class="fa-regular fa-comment"></i>
-                            <span>{{ $post->comments_count }}</span>
+                            <span class="comment-count">{{ $post->comments_count }}</span>
                             <span>Comentarios</span>
                         </button>
+                    </div>
+
+                    {{-- Sección de comentarios --}}
+                    <div class="comments-section hidden mt-4 border-t border-[#2A2A2A] pt-4" data-post-id="{{ $post->id }}">
+                        <div class="comments-list space-y-3 mb-4">
+                            <!-- Comentarios se cargarán aquí -->
+                        </div>
+
+                        {{-- Formulario para nuevo comentario --}}
+                        <form class="comment-form flex gap-3" data-post-id="{{ $post->id }}">
+                            @csrf
+                            <input type="text" name="content" placeholder="Escribe un comentario..."
+                                   class="flex-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-[#00E676]"
+                                   maxlength="500" required>
+                            <button type="submit"
+                                    class="bg-[#00E676] text-black px-4 py-2 rounded-lg hover:bg-[#00CC5A] transition">
+                                Comentar
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -308,6 +327,87 @@
                 .catch(error => console.error('Error:', error));
             });
         });
+
+        // Comments
+        document.querySelectorAll('.comment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const commentsSection = document.querySelector(`.comments-section[data-post-id="${postId}"]`);
+
+                if (commentsSection.classList.contains('hidden')) {
+                    // Load comments
+                    loadComments(postId);
+                    commentsSection.classList.remove('hidden');
+                } else {
+                    commentsSection.classList.add('hidden');
+                }
+            });
+        });
+
+        // Comment forms
+        document.querySelectorAll('.comment-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const postId = this.dataset.postId;
+                const formData = new FormData(this);
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch(`/post/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(`Error ${response.status}: ${text}`); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.id) {
+                        addCommentToList(postId, data);
+                        this.querySelector('input[name="content"]').value = '';
+                        const countSpan = document.querySelector(`.comment-btn[data-post-id="${postId}"] .comment-count`);
+                        countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                    } else {
+                        console.error('Comment submit response:', data);
+                    }
+                })
+                .catch(error => console.error('Error submitting comment:', error));
+            });
+        });
+
+        function loadComments(postId) {
+            fetch(`/post/${postId}/comments`)
+                .then(response => response.json())
+                .then(comments => {
+                    const commentsList = document.querySelector(`.comments-section[data-post-id="${postId}"] .comments-list`);
+                    commentsList.innerHTML = '';
+                    comments.forEach(comment => {
+                        addCommentToList(postId, comment);
+                    });
+                })
+                .catch(error => console.error('Error loading comments:', error));
+        }
+
+        function addCommentToList(postId, comment) {
+            const commentsList = document.querySelector(`.comments-section[data-post-id="${postId}"] .comments-list`);
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'bg-[#2A2A2A] rounded-lg p-3';
+            commentDiv.innerHTML = `
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="font-medium text-white">${comment.user.name}</span>
+                    <span class="text-gray-400 text-xs">${new Date().toLocaleDateString()}</span>
+                </div>
+                <p class="text-gray-300">${comment.content}</p>
+            `;
+            commentsList.appendChild(commentDiv);
+        }
     });
 </script>
 @endsection

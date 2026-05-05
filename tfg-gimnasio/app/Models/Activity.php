@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Activity extends Model
 {
-    protected $fillable = ['title', 'user_id', 'space_id', 'scheduled_at'];
+    protected $fillable = ['title', 'user_id', 'space_id', 'scheduled_at', 'category'];
 
     public function space()
     {
@@ -20,4 +20,4 @@ class Activity extends Model
     {
         return $this->belongsToMany(User::class, 'enrollments');
     }
-}   
+}

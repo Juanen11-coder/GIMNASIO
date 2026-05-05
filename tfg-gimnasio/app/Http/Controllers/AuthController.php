@@ -46,13 +46,14 @@ class AuthController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
+            'role'     => 'required|in:student,teacher',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
+            'role' => $request->role,
             'avatar' => 'https://ui-avatars.com/api/?background=6366f1&color=fff&name=' . urlencode($request->name),
         ]);
 

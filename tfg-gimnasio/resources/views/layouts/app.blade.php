@@ -148,8 +148,8 @@
                     @else
                         <a href="{{ route('home') }}" class="nav-link">Inicio</a>
                         <a href="{{ route('inscribete') }}" class="nav-link">Inscríbete</a>
-                        <a href="{{ route('sobre-nosotros') }}" class="nav-link">Sobre nosotros</a>
-                        <a href="{{ route('ofertas') }}" class="nav-link">Ofertas</a>
+                        <a href="{{ route('about') }}" class="nav-link">Sobre nosotros</a>
+                        <a href="{{ route('tienda') }}" class="nav-link">Ofertas</a>
                     @endauth
                 </div>
 

@@ -15,8 +15,15 @@
         <p class="text-gray-400">Conecta con otros miembros y comparte tus entrenos</p>
     </div>
 
+    {{-- Botón buscar --}}
+    <div class="flex justify-end mb-6">
+        <a href="{{ route('friends.search') }}" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
+            <i class="fas fa-search"></i> Buscar personas
+        </a>
+    </div>
+
     {{-- TABS --}}
-    <div class="flex border-b border-[#2A2A2A] mb-8">
+    <div class="flex border-b border-[#2A2A2A] mb-6">
         <button class="tab-btn active px-6 py-3 text-white font-semibold border-b-2 border-[#00E676] transition" data-tab="friends">
             <i class="fas fa-users mr-2"></i> Amigos
             @if(isset($friends) && $friends->count() > 0)
@@ -44,7 +51,6 @@
                 @foreach($friends as $friend)
                     <a href="{{ route('perfil.show', $friend->id) }}"
                        class="flex items-center gap-4 bg-[#1E1E1E] rounded-2xl p-4 border border-[#2A2A2A] hover:border-[#00E676] transition-all group">
-                        {{-- Avatar --}}
                         @if($friend->avatar)
                             <img src="{{ $friend->avatar }}" class="w-14 h-14 rounded-full object-cover">
                         @else
@@ -67,9 +73,6 @@
                 <i class="fas fa-user-friends text-5xl text-gray-600 mb-4"></i>
                 <p class="text-gray-500">No tienes amigos aún.</p>
                 <p class="text-gray-500 text-sm mt-2">¡Envía solicitudes a otros usuarios para empezar!</p>
-                <a href="{{ route('home') }}" class="inline-block mt-4 text-[#00E676] hover:text-[#00c853]">
-                    Buscar miembros →
-                </a>
             </div>
         @endif
     </div>
@@ -98,14 +101,14 @@
                                 @csrf
                                 @method('PUT')
                                 <button type="submit" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition">
-                                    <i class="fas fa-check mr-1"></i> Aceptar
+                                    ✅ Aceptar
                                 </button>
                             </form>
                             <form action="{{ route('friends.decline', $request) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="bg-[#2A2A2A] hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
-                                    <i class="fas fa-times"></i>
+                                <button type="submit" class="bg-gray-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
+                                    ❌ Rechazar
                                 </button>
                             </form>
                         </div>
@@ -149,12 +152,48 @@
             <div class="bg-[#1E1E1E] rounded-2xl p-12 text-center border border-[#2A2A2A]">
                 <i class="fas fa-paper-plane text-5xl text-gray-600 mb-4"></i>
                 <p class="text-gray-500">No has enviado ninguna solicitud.</p>
-                <a href="{{ route('home') }}" class="inline-block mt-4 text-[#00E676] hover:text-[#00c853]">
-                    Buscar miembros →
-                </a>
             </div>
         @endif
     </div>
+
+    {{-- SECCIÓN DE SUGERENCIAS --}}
+    @if(isset($suggestions) && $suggestions->count() > 0)
+        <div class="mt-10">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-white">
+                    <i class="fas fa-lightbulb text-[#00E676] mr-2"></i> Sugerencias para ti
+                </h2>
+                <a href="{{ route('friends.search') }}" class="text-sm text-[#00E676] hover:text-[#00c853] transition">
+                    Ver más →
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                @foreach($suggestions as $suggestion)
+                    <div class="flex items-center justify-between bg-[#1E1E1E] rounded-2xl p-3 border border-[#2A2A2A] hover:border-[#00E676] transition-all">
+                        <div class="flex items-center gap-3">
+                            @if($suggestion->avatar)
+                                <img src="{{ $suggestion->avatar }}" class="w-12 h-12 rounded-full object-cover">
+                            @else
+                                <div class="w-12 h-12 rounded-full bg-[#00E676]/20 flex items-center justify-center text-[#00E676] font-bold text-lg">
+                                    {{ substr($suggestion->name, 0, 1) }}
+                                </div>
+                            @endif
+                            <div>
+                                <p class="font-semibold text-white">{{ $suggestion->name }}</p>
+                                <p class="text-xs text-gray-500">{{ $suggestion->posts->count() }} publicaciones</p>
+                            </div>
+                        </div>
+                        <form action="{{ route('friends.request', $suggestion) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition text-sm">
+                                <i class="fas fa-user-plus mr-1"></i> Seguir
+                            </button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
 </div>
 
@@ -164,7 +203,6 @@
         btn.addEventListener('click', function() {
             const tab = this.dataset.tab;
 
-            // Actualizar estilo de los botones
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('active', 'border-[#00E676]', 'text-white');
                 b.classList.add('text-gray-400', 'border-b-0');
@@ -172,7 +210,6 @@
             this.classList.add('active', 'border-[#00E676]', 'text-white');
             this.classList.remove('text-gray-400');
 
-            // Mostrar el contenido correspondiente
             document.getElementById('tab-friends').classList.add('hidden');
             document.getElementById('tab-received').classList.add('hidden');
             document.getElementById('tab-sent').classList.add('hidden');

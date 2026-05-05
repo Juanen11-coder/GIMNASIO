@@ -15,6 +15,27 @@
         <p class="text-gray-400 max-w-2xl mx-auto">Elige entre nuestras actividades y alcanza tus objetivos</p>
     </div>
 
+    @if(session('success'))
+        <div class="mb-6 bg-green-800 text-green-100 p-4 rounded-xl border border-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="mb-6 bg-red-800 text-red-100 p-4 rounded-xl border border-red-700">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @auth
+        @if(in_array(auth()->user()->role, ['admin', 'teacher'], true))
+            <div class="text-center mb-8">
+                <a href="{{ route('activities.create') }}" class="inline-flex items-center justify-center bg-[#00E676] text-black px-6 py-3 rounded-full font-semibold transition hover:bg-[#00c853]">
+                    <i class="fas fa-plus mr-2"></i> Crear actividad
+                </a>
+            </div>
+        @endif
+    @endauth
+
     {{-- Filtros (opcional) --}}
     <div class="flex flex-wrap justify-center gap-3 mb-12">
         <button class="filter-btn active bg-[#00E676] text-black px-5 py-2 rounded-full font-semibold transition hover:bg-[#00c853]" data-filter="all">Todas</button>
@@ -27,6 +48,13 @@
     @if(isset($activities) && count($activities) > 0)
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($activities as $activity)
+                @php
+                    $capacity = $activity->space->capacity ?? 0;
+                    $enrolledCount = $activity->students_count ?? 0;
+                    $availableSeats = max($capacity - $enrolledCount, 0);
+                    $isEnrolled = in_array($activity->id, $enrolledActivityIds ?? [], true);
+                    $isFull = $capacity > 0 && $availableSeats === 0;
+                @endphp
                 <div class="activity-card bg-[#1E1E1E] rounded-2xl overflow-hidden border border-[#2A2A2A] hover:border-[#00E676] transition-all hover:transform hover:-translate-y-1 group" data-category="{{ strtolower($activity->category ?? 'cardio') }}">
 
                     {{-- Imagen o gradiente --}}
@@ -48,7 +76,9 @@
                     <div class="p-5">
                         <div class="flex justify-between items-start mb-2">
                             <h3 class="text-xl font-bold text-white">{{ $activity->title }}</h3>
-                            <span class="bg-[#00E676]/20 text-[#00E676] text-xs font-semibold px-2 py-1 rounded-full">12 plazas</span>
+                            <span class="bg-[#00E676]/20 text-[#00E676] text-xs font-semibold px-2 py-1 rounded-full">
+                                {{ $availableSeats }}/{{ $capacity }} plazas
+                            </span>
                         </div>
 
                         <div class="space-y-2 text-sm text-gray-400 mb-4">
@@ -73,18 +103,39 @@
                         </div>
 
                         <div class="flex gap-3 mt-4">
-                            <form action="{{ route('activities.enroll', $activity->id) }}" method="POST" class="flex-1">
-                                @csrf
-                                <button type="submit" class="w-full bg-[#00E676] hover:bg-[#00c853] text-black font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
-                                    <i class="fas fa-check-circle"></i> Apuntarse
-                                </button>
-                            </form>
                             @auth
+                                @if(in_array(auth()->user()->role, ['user', 'student'], true))
+                                    @if($isEnrolled)
+                                        <form action="{{ route('activities.unenroll', $activity->id) }}" method="POST" class="flex-1">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
+                                                <i class="fas fa-xmark"></i> Desapuntarse
+                                            </button>
+                                        </form>
+                                    @elseif($isFull)
+                                        <button type="button" disabled class="flex-1 w-full bg-[#2A2A2A] text-gray-300 font-bold py-2 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed">
+                                            <i class="fas fa-ban"></i> Completa
+                                        </button>
+                                    @else
+                                        <form action="{{ route('activities.enroll', $activity->id) }}" method="POST" class="flex-1">
+                                            @csrf
+                                            <button type="submit" class="w-full bg-[#00E676] hover:bg-[#00c853] text-black font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
+                                                <i class="fas fa-check-circle"></i> Apuntarse
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
+
                                 @if(auth()->user()->id == ($activity->user_id ?? null))
                                     <a href="{{ route('activities.students', $activity->id) }}" class="bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white px-4 py-2 rounded-xl transition flex items-center justify-center">
                                         <i class="fas fa-users"></i>
                                     </a>
                                 @endif
+                            @else
+                                <a href="{{ route('login') }}" class="w-full bg-[#00E676] hover:bg-[#00c853] text-black font-bold py-2 rounded-xl transition flex items-center justify-center gap-2">
+                                    <i class="fas fa-sign-in-alt"></i> Inicia sesión para apuntarte
+                                </a>
                             @endauth
                         </div>
                     </div>
@@ -96,7 +147,7 @@
             <i class="fas fa-calendar-times text-5xl text-gray-600 mb-4"></i>
             <p class="text-gray-500">No hay actividades disponibles en este momento.</p>
             @auth
-                @if(auth()->user()->role === 'admin')
+                @if(in_array(auth()->user()->role, ['admin', 'teacher'], true))
                     <a href="{{ route('activities.create') }}" class="inline-block mt-4 text-[#00E676] hover:text-[#00c853]">
                         Crear primera actividad →
                     </a>

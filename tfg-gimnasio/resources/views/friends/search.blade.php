@@ -59,7 +59,6 @@
                     </div>
 
                     <div>
-                        {{-- Estado de amistad --}}
                         @php
                             $friendship = \App\Models\Friendship::where(function($q) use ($user) {
                                 $q->where('user_id', auth()->id())->where('friend_id', $user->id);
@@ -90,7 +89,7 @@
                                         <form action="{{ route('friends.decline', $friendship) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="bg-[#2A2A2A] hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
+                                            <button type="submit" class="bg-gray-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </form>

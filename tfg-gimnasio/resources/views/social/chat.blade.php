@@ -35,13 +35,13 @@
 
     {{-- Mensajes de éxito/error --}}
     @if(session('success'))
-        <div class="bg-[#00E676] bg-opacity-20 border border-[#00E676] text-[#00E676] px-4 py-3 rounded-xl mb-4">
+        <div class="bg-green-500/20 border border-green-500 text-green-500 px-4 py-3 rounded-xl mb-4">
             {{ session('success') }}
         </div>
     @endif
 
     @if(session('error'))
-        <div class="bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-3 rounded-xl mb-4">
+        <div class="bg-red-500/20 border border-red-500 text-red-500 px-4 py-3 rounded-xl mb-4">
             {{ session('error') }}
         </div>
     @endif
@@ -103,7 +103,7 @@
 
     {{-- Formulario para enviar mensaje --}}
     <div class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] p-4">
-        <form action="{{ route('chat.send', $conversationId) }}" method="POST" class="flex gap-3">
+        <form action="{{ route('chat.send', $conversationId ?? $otherUser['id'] ?? 1) }}" method="POST" class="flex gap-3">
             @csrf
             <input type="text"
                    name="message"
@@ -113,21 +113,17 @@
                    required>
             <button type="submit"
                     class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-6 py-3 rounded-xl transition transform hover:scale-105">
-                <i class="fas fa-paper-plane mr-2"></i> Enviar
+                <i class="fas fa-paper-plane"></i> Enviar
             </button>
         </form>
     </div>
 </div>
 
 <script>
+    // Auto-scroll al final del chat
     const container = document.getElementById('messages-container');
     if (container) {
         container.scrollTop = container.scrollHeight;
     }
-
-    // Auto-refresh cada 5 segundos (opcional)
-    setInterval(function() {
-        location.reload();
-    }, 5000);
 </script>
 @endsection

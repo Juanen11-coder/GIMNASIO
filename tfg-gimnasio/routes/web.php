@@ -5,11 +5,15 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SocialController;
 use App\Http\Controllers\FriendshipController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\PageController;
 
-// Rutas públicas (sin autenticación)
-Route::get('/', function () {
-    return redirect('/login');
-});
+// Páginas públicas
+Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/sobre-nosotros', [PageController::class, 'about'])->name('about');
+Route::get('/inscribete', [PageController::class, 'offers'])->name('inscribete');
+Route::get('/contacto', [PageController::class, 'contact'])->name('contact');
+Route::get('/tienda', [PageController::class, 'tienda'])->name('tienda');
 
 // Rutas de autenticación
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -25,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reservar', [BookingController::class, 'createActivity'])->name('activities.create');
     Route::post('/reservar', [BookingController::class, 'storeActivity'])->name('activities.store');
     Route::post('/actividades/{activity}/apuntarse', [BookingController::class, 'enroll'])->name('activities.enroll');
+    Route::delete('/actividades/{activity}/desapuntarse', [BookingController::class, 'unenroll'])->name('activities.unenroll');
     Route::get('/actividad/{activity}/alumnos', [BookingController::class, 'showStudents'])->name('activities.students');
 
     // Rutas sociales (Juanen)
@@ -34,6 +39,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/chat/{conversationId}', [SocialController::class, 'chat'])->name('chat.show');
     Route::post('/chat/{conversationId}', [SocialController::class, 'sendMessage'])->name('chat.send');
     Route::post('/post', [SocialController::class, 'createPost'])->name('post.create');
+    Route::delete('/post/{post}', [SocialController::class, 'deletePost'])->name('post.delete');
+    Route::post('/post/{post}/like', [SocialController::class, 'toggleLike'])->name('post.like');
+    Route::get('/post/{post}/comments', [CommentController::class, 'index'])->name('post.comments');
+    Route::post('/post/{post}/comments', [CommentController::class, 'store'])->name('post.comments.store');
 
     // Rutas de amigos
     Route::get('/friends', [FriendshipController::class, 'index'])->name('friends.index');
@@ -45,17 +54,6 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/friends/{friendship}/cancel', [FriendshipController::class, 'cancelRequest'])->name('friends.cancel');
 });
 
-use App\Http\Controllers\PageController;
-
-// Rutas públicas (sin login)
-Route::get('/', [PageController::class, 'home'])->name('home');
-Route::get('/sobre-nosotros', [PageController::class, 'about'])->name('about');
-Route::get('/inscribete', [PageController::class, 'offers'])->name('offers');
-Route::get('/contacto', [PageController::class, 'contact'])->name('contact');
-
-
-
-
 
 
 // API para obtener ejercicios por grupo muscular
@@ -63,20 +61,9 @@ Route::get('/api/ejercicios-por-grupo/{grupoId}', function ($grupoId) {
     return \App\Models\EjercicioPredefinido::where('grupo_muscular_id', $grupoId)->get();
 });
 
-// Páginas públicas
-Route::get('/', [PageController::class, 'home'])->name('home');
-Route::get('/inscribete', [PageController::class, 'inscribete'])->name('inscribete');
-Route::get('/sobre-nosotros', [PageController::class, 'about'])->name('sobre-nosotros');
-Route::get('/ofertas', [PageController::class, 'ofertas'])->name('ofertas');
-
-Route::get('/tienda', [PageController::class, 'tienda'])->name('tienda');
 
 Route::get('/api/ejercicios-por-musculo/{musculoId}', function ($musculoId) {
-    return App\Models\EjercicioPredefinido::where('musculo_id', $musculoId)
+    return \App\Models\EjercicioPredefinido::where('musculo_id', $musculoId)
         ->select('id', 'nombre')
         ->get();
 });
-Route::delete('/post/{post}', [SocialController::class, 'deletePost'])->name('post.delete');
-
-
-Route::post('/post/{post}/like', [SocialController::class, 'toggleLike'])->name('post.like');
