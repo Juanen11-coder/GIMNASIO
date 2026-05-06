@@ -8,8 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Comment extends Model
 {
     protected $fillable = [
-        'user_id', 'post_id', 'content'
+        'user_id',
+        'post_id',
+        'comment',
     ];
+
+    protected $appends = ['content'];
+
+    public function getContentAttribute()
+    {
+        return $this->comment;
+    }
 
     // Relación: un comentario pertenece a un usuario
     public function user(): BelongsTo

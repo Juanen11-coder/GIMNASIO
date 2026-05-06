@@ -29,6 +29,10 @@ class User extends Authenticatable
         'password',
         'avatar',
         'role',
+        'fitness_goal',
+        'fitness_level',
+        'height_cm',
+        'weight_kg',
     ];
 
     /**

@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8 max-w-2xl">
+    @if(session('success'))
+        <div class="mb-6 bg-green-800 text-green-100 p-4 rounded-xl border border-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
 
     {{-- Tarjeta de perfil --}}
     <div class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] p-6 mb-6">
@@ -30,6 +35,24 @@
                 @if (isset($user) && $user)
                     <h1 class="text-2xl font-bold text-white">{{ $user->name }}</h1>
                     <p class="text-gray-400">{{ $user->email }}</p>
+                    <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+                        <div class="bg-[#2A2A2A] rounded-xl p-3">
+                            <p class="text-gray-500">Objetivo</p>
+                            <p class="text-white">{{ $user->fitness_goal ?: 'Sin indicar' }}</p>
+                        </div>
+                        <div class="bg-[#2A2A2A] rounded-xl p-3">
+                            <p class="text-gray-500">Nivel</p>
+                            <p class="text-white">{{ $user->fitness_level ? ucfirst($user->fitness_level) : 'Sin indicar' }}</p>
+                        </div>
+                        <div class="bg-[#2A2A2A] rounded-xl p-3">
+                            <p class="text-gray-500">Altura</p>
+                            <p class="text-white">{{ $user->height_cm ? $user->height_cm . ' cm' : 'Sin indicar' }}</p>
+                        </div>
+                        <div class="bg-[#2A2A2A] rounded-xl p-3">
+                            <p class="text-gray-500">Peso</p>
+                            <p class="text-white">{{ $user->weight_kg ? $user->weight_kg . ' kg' : 'Sin indicar' }}</p>
+                        </div>
+                    </div>
                 @else
                     <h1 class="text-2xl font-bold text-gray-400">Usuario no encontrado</h1>
                 @endif
@@ -111,6 +134,9 @@
                         </a>
                         <a href="{{ route('friends.index') }}" class="bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white px-4 py-2 rounded-xl transition text-center">
                             👥 Mis amigos
+                        </a>
+                        <a href="{{ route('perfil.edit') }}" class="bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white px-4 py-2 rounded-xl transition text-center">
+                            Editar perfil
                         </a>
                     @endif
                 @endauth
@@ -257,104 +283,40 @@
     }
 
     // Comentarios
-    let currentPostId = null;
+document.getElementById('submitCommentBtn')?.addEventListener('click', function() {
+    const input = document.getElementById('commentInput');
+    const comment = input.value.trim();
+    if (!comment) return;
 
-    function openCommentModal(postId) {
-        currentPostId = postId;
-        document.getElementById('commentModal').classList.remove('hidden');
-        loadComments(postId);
-    }
-
-    function closeCommentModal() {
-        document.getElementById('commentModal').classList.add('hidden');
-        currentPostId = null;
-    }
-
-    function loadComments(postId) {
-        fetch(`/post/${postId}/comments`)
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('commentsList');
-                container.innerHTML = '';
-                if (data.length === 0) {
-                    container.innerHTML = '<p class="text-center text-gray-500">No hay comentarios. ¡Sé el primero!</p>';
-                } else {
-                    data.forEach(comment => {
-                        container.innerHTML += `
-                            <div class="flex gap-3">
-                                <div class="w-8 h-8 rounded-full bg-[#00E676] flex items-center justify-center text-black font-bold text-xs">
-                                    ${comment.user.name.charAt(0)}
-                                </div>
-                                <div class="flex-1">
-                                    <div class="bg-[#2A2A2A] rounded-xl p-2">
-                                        <p class="font-semibold text-white text-sm">${comment.user.name}</p>
-                                        <p class="text-gray-300 text-sm">${comment.comment}</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">${comment.created_at}</p>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-            });
-    }
-
-    document.querySelectorAll('.comment-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            openCommentModal(this.dataset.postId);
-        });
+    fetch(`/post/${currentPostId}/comment`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comment: comment })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadComments(currentPostId);
+            const commentBtn = document.querySelector(`.comment-btn[data-post-id="${currentPostId}"] .comment-count`);
+            if (commentBtn) commentBtn.textContent = data.comments_count;
+        }
     });
-
-    document.getElementById('commentForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const input = document.getElementById('commentInput');
-        const comment = input.value.trim();
-        if (!comment) return;
-
-        fetch(`/post/${currentPostId}/comment`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ comment: comment })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                input.value = '';
-                loadComments(currentPostId);
-                const commentBtn = document.querySelector(`.comment-btn[data-post-id="${currentPostId}"] .comment-count`);
-                if (commentBtn) commentBtn.textContent = data.comments_count;
-            }
-        });
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeCommentModal();
-    });
+});
 </script>
 
 {{-- MODAL DE COMENTARIOS --}}
-<div id="commentModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-    <div class="bg-[#1E1E1E] rounded-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div class="p-4 border-b border-[#2A2A2A] flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">Comentarios</h3>
-            <button onclick="closeCommentModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-        </div>
-        <div id="commentsList" class="p-4 max-h-96 overflow-y-auto space-y-3"></div>
-        <div class="p-4 border-t border-[#2A2A2A]">
-            <form id="commentForm" method="POST">
-                @csrf
-                <div class="flex gap-2">
-                    <input type="text" id="commentInput" name="comment" placeholder="Escribe un comentario..."
-                        class="flex-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676] transition">
-                    <button type="submit" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
+{{-- MODAL DE COMENTARIOS --}}
+<div class="p-4 border-t border-[#2A2A2A]">
+    <div class="flex gap-2">
+        <input type="text" id="commentInput" placeholder="Escribe un comentario..."
+            class="flex-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676] transition">
+        <button id="submitCommentBtn" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition">
+            <i class="fas fa-paper-plane"></i>
+        </button>
     </div>
 </div>
 @endsection

@@ -20,4 +20,14 @@ class Activity extends Model
     {
         return $this->belongsToMany(User::class, 'enrollments');
     }
+
+    public function waitlistEntries()
+    {
+        return $this->hasMany(WaitlistEntry::class);
+    }
+
+    public function waitlistedUsers()
+    {
+        return $this->belongsToMany(User::class, 'waitlist_entries');
+    }
 }

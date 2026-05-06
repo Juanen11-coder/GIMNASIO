@@ -144,7 +144,11 @@
                         <a href="{{ route('feed') }}" class="nav-link">Feed</a>
                         <a href="{{ route('chats.index') }}" class="nav-link">Chats</a>
                         <a href="{{ route('activities.index') }}" class="nav-link">Actividades</a>
+                        <a href="{{ route('activities.mine') }}" class="nav-link">Mis clases</a>
                         <a href="{{ route('friends.index') }}" class="nav-link">Amigos</a>
+                        @if(in_array(auth()->user()->role, ['admin', 'teacher'], true))
+                            <a href="{{ route('admin.activities') }}" class="nav-link">Admin</a>
+                        @endif
                     @else
                         <a href="{{ route('home') }}" class="nav-link">Inicio</a>
                         <a href="{{ route('inscribete') }}" class="nav-link">Inscríbete</a>

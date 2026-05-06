@@ -11,7 +11,7 @@ class PageController extends Controller
 
     public function inscribete()
     {
-        return view('inscribete-en-construccion');
+        return view('inscribete');
     }
 
     public function about()

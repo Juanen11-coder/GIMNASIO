@@ -6,12 +6,13 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SocialController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\AiCoachController;
 use App\Http\Controllers\PageController;
 
 // Páginas públicas
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/sobre-nosotros', [PageController::class, 'about'])->name('about');
-Route::get('/inscribete', [PageController::class, 'offers'])->name('inscribete');
+Route::get('/inscribete', [PageController::class, 'inscribete'])->name('inscribete');
 Route::get('/contacto', [PageController::class, 'contact'])->name('contact');
 Route::get('/tienda', [PageController::class, 'tienda'])->name('tienda');
 
@@ -26,14 +27,26 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     // Rutas de actividades (Pablo)
     Route::get('/actividades', [BookingController::class, 'index'])->name('activities.index');
+    Route::get('/mis-actividades', [BookingController::class, 'myActivities'])->name('activities.mine');
     Route::get('/reservar', [BookingController::class, 'createActivity'])->name('activities.create');
     Route::post('/reservar', [BookingController::class, 'storeActivity'])->name('activities.store');
+    Route::get('/actividades/{activity}/editar', [BookingController::class, 'editActivity'])->name('activities.edit');
+    Route::put('/actividades/{activity}', [BookingController::class, 'updateActivity'])->name('activities.update');
+    Route::delete('/actividades/{activity}', [BookingController::class, 'destroyActivity'])->name('activities.destroy');
     Route::post('/actividades/{activity}/apuntarse', [BookingController::class, 'enroll'])->name('activities.enroll');
     Route::delete('/actividades/{activity}/desapuntarse', [BookingController::class, 'unenroll'])->name('activities.unenroll');
+    Route::delete('/actividades/{activity}/lista-espera', [BookingController::class, 'leaveWaitlist'])->name('activities.waitlist.leave');
     Route::get('/actividad/{activity}/alumnos', [BookingController::class, 'showStudents'])->name('activities.students');
+    Route::get('/admin/actividades', [BookingController::class, 'admin'])->name('admin.activities');
+    Route::get('/admin/salas', [BookingController::class, 'spaces'])->name('admin.spaces');
+    Route::post('/admin/salas', [BookingController::class, 'storeSpace'])->name('admin.spaces.store');
+    Route::put('/admin/salas/{space}', [BookingController::class, 'updateSpace'])->name('admin.spaces.update');
+    Route::delete('/admin/salas/{space}', [BookingController::class, 'destroySpace'])->name('admin.spaces.destroy');
 
     // Rutas sociales (Juanen)
     Route::get('/feed', [SocialController::class, 'feed'])->name('feed');
+    Route::get('/perfil-editar', [SocialController::class, 'editProfile'])->name('perfil.edit');
+    Route::put('/perfil-editar', [SocialController::class, 'updateProfile'])->name('perfil.update');
     Route::get('/perfil/{id}', [SocialController::class, 'perfil'])->name('perfil.show');
     Route::get('/chats', [SocialController::class, 'chats'])->name('chats.index');
     Route::get('/chat/{conversationId}', [SocialController::class, 'chat'])->name('chat.show');
@@ -49,8 +62,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/friends/search', [FriendshipController::class, 'search'])->name('friends.search');
     Route::get('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request.get'); // Temporal para testing
     Route::post('/friends/{user}/request', [FriendshipController::class, 'sendRequest'])->name('friends.request');
-    Route::post('/friends/{friendship}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
+    Route::match(['post', 'put'], '/friends/{friendship}/accept', [FriendshipController::class, 'acceptRequest'])->name('friends.accept');
     Route::post('/friends/{friendship}/reject', [FriendshipController::class, 'rejectRequest'])->name('friends.reject');
+    Route::delete('/friends/{friendship}/decline', [FriendshipController::class, 'declineRequest'])->name('friends.decline');
     Route::delete('/friends/{friendship}/cancel', [FriendshipController::class, 'cancelRequest'])->name('friends.cancel');
 });
 

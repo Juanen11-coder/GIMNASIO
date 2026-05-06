@@ -10,7 +10,8 @@ class CommentController extends Controller
 {
     public function index(Post $post)
     {
-        $comments = $post->comments()->with('user')->get();
+        $comments = $post->comments()->with('user')->oldest()->get();
+
         return response()->json($comments);
     }
 
@@ -21,12 +22,12 @@ class CommentController extends Controller
         }
 
         $request->validate([
-            'content' => 'required|string|max:500'
+            'content' => 'required|string|max:500',
         ]);
 
         $comment = $post->comments()->create([
             'user_id' => auth()->id(),
-            'content' => $request->content
+            'comment' => $request->content,
         ]);
 
         $post->increment('comments_count');

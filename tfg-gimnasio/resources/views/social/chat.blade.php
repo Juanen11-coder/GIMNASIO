@@ -103,17 +103,17 @@
 
     {{-- Formulario para enviar mensaje --}}
     <div class="bg-[#1E1E1E] rounded-2xl border border-[#2A2A2A] p-4">
-        <form action="{{ route('chat.send', $conversationId ?? $otherUser['id'] ?? 1) }}" method="POST" class="flex gap-3">
+        <form action="{{ route('chat.send', $conversationId) }}" method="POST" class="flex gap-3">
             @csrf
             <input type="text"
                    name="message"
-                   class="flex-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676] transition"
+                   class="flex-1 bg-[#2A2A2A] border border-[#3A3A2A] rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00E676] transition"
                    placeholder="Escribe un mensaje..."
                    autocomplete="off"
                    required>
             <button type="submit"
                     class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-6 py-3 rounded-xl transition transform hover:scale-105">
-                <i class="fas fa-paper-plane"></i> Enviar
+                <i class="fas fa-paper-plane mr-2"></i> Enviar
             </button>
         </form>
     </div>

@@ -44,7 +44,7 @@ class SocialController extends Controller
     }
 
     /**
-     * Muestra el feed de publicaciones (solo posts del usuario logueado)
+     * Muestra el feed de publicaciones de los amigos
      */
     public function feed()
     {
@@ -52,11 +52,29 @@ class SocialController extends Controller
             return redirect()->route('login');
         }
 
-        $posts = Post::with('user', 'detalles.musculo')
-            ->withCount('likes')
-            ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $user = Auth::user();
+
+        // Obtener IDs de los amigos aceptados
+        $friendIds = Friendship::where(function($query) use ($user) {
+            $query->where('user_id', $user->id)
+                  ->orWhere('friend_id', $user->id);
+        })->where('status', 'accepted')
+          ->get()
+          ->map(function($friendship) use ($user) {
+              return $friendship->user_id == $user->id ? $friendship->friend_id : $friendship->user_id;
+          });
+
+        // Si no tiene amigos, mostrar mensaje
+        if ($friendIds->isEmpty()) {
+            $posts = collect();
+        } else {
+            // Obtener posts de los amigos (incluyendo el propio si quiere)
+            $posts = Post::with('user', 'detalles.musculo')
+                ->withCount('likes')
+                ->whereIn('user_id', $friendIds)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         $musculos = Musculo::all();
 
@@ -82,6 +100,27 @@ class SocialController extends Controller
         ];
 
         return view('social.perfil', compact('user', 'userPosts', 'stats'));
+    }
+
+    public function editProfile()
+    {
+        return view('social.profile-edit', ['user' => Auth::user()]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'fitness_goal' => 'nullable|string|max:255',
+            'fitness_level' => 'nullable|in:principiante,intermedio,avanzado',
+            'height_cm' => 'nullable|integer|min:80|max:250',
+            'weight_kg' => 'nullable|numeric|min:20|max:300',
+        ]);
+
+        $user->update($data);
+
+        return redirect()->route('perfil.show', Auth::id())->with('success', 'Perfil actualizado correctamente.');
     }
 
     /**
@@ -127,10 +166,7 @@ class SocialController extends Controller
     /**
      * Muestra una conversación específica
      */
-  /**
- * Muestra una conversación específica
- */
-public function chat($friendId)
+    public function chat($friendId)
 {
     if (!Auth::check()) {
         return redirect()->route('login');
@@ -180,17 +216,14 @@ public function chat($friendId)
     /**
      * Envía un mensaje en una conversación
      */
-/**
- * Envía un mensaje en una conversación
- */
-public function sendMessage(Request $request, $friendId)
+    public function sendMessage(Request $request, $friendId)
 {
     if (!Auth::check()) {
         return redirect()->route('login');
     }
 
-    $currentUser = Auth::user(); // ← Obtener el objeto User
-    $friend = User::find($friendId);
+    $currentUser = Auth::user();
+    $friend = User::findOrFail($friendId);
 
     if (!$friend) {
         return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
@@ -204,7 +237,7 @@ public function sendMessage(Request $request, $friendId)
     })->where('status', 'accepted')->exists();
 
     if (!$isFriend) {
-        return back()->with('error', 'Solo puedes enviar mensajes a amigos.');
+        return redirect()->route('chat.show', $friendId)->with('error', 'Solo puedes enviar mensajes a amigos.');
     }
 
     $request->validate([

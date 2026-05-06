@@ -53,5 +53,33 @@
         </div>
     @endif
 
+    <h2 class="text-xl font-bold text-white mt-8 mb-4">Lista de espera</h2>
+    @if(isset($waitlistEntries) && $waitlistEntries->count() > 0)
+        <div class="space-y-3">
+            @foreach($waitlistEntries as $entry)
+                <a href="{{ route('perfil.show', $entry->user->id) }}"
+                   class="block bg-[#1E1E1E] rounded-2xl border border-yellow-700 hover:border-yellow-400 transition-all overflow-hidden">
+                    <div class="flex items-center p-4 gap-4">
+                        @if($entry->user->avatar)
+                            <img src="{{ $entry->user->avatar }}" class="w-12 h-12 rounded-full object-cover">
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-lg">
+                                {{ substr($entry->user->name, 0, 1) }}
+                            </div>
+                        @endif
+                        <div>
+                            <p class="font-semibold text-white">{{ $entry->user->name }}</p>
+                            <p class="text-xs text-gray-500">{{ $entry->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    @else
+        <div class="bg-[#1E1E1E] rounded-2xl p-8 text-center border border-[#2A2A2A]">
+            <p class="text-gray-500">No hay alumnos en lista de espera.</p>
+        </div>
+    @endif
+
 </div>
 @endsection

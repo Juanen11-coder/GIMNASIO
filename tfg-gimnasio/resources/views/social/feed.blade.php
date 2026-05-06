@@ -189,7 +189,25 @@
     @else
         <div class="bg-[#1E1E1E] rounded-2xl p-12 text-center border border-[#2A2A2A]">
             <i class="fas fa-dumbbell text-5xl text-gray-600 mb-4"></i>
-            <p class="text-gray-500">No hay publicaciones aún. ¡Sé el primero en compartir tu entreno!</p>
+            <p class="text-gray-500 text-lg mb-2">No hay publicaciones de amigos aún.</p>
+            <p class="text-gray-500 text-sm">
+                @auth
+                    Añade amigos para ver sus entrenamientos aquí, o
+                    <button onclick="document.getElementById('createPostModal').classList.remove('hidden')"
+                        class="text-[#00E676] hover:text-[#00c853] font-semibold">
+                        sé el primero en publicar
+                    </button>.
+                @else
+                    Inicia sesión para ver las publicaciones de tus amigos.
+                @endauth
+            </p>
+            @auth
+                <div class="mt-6">
+                    <a href="{{ route('friends.index') }}" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-6 py-3 rounded-xl transition inline-flex items-center gap-2">
+                        <i class="fas fa-users"></i> Buscar amigos
+                    </a>
+                </div>
+            @endauth
         </div>
     @endif
 

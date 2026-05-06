@@ -47,6 +47,11 @@
     {{-- TAB: MIS AMIGOS --}}
     <div id="tab-friends" class="tab-content">
         @if(isset($friends) && $friends->count() > 0)
+            <div class="mb-4">
+                <a href="{{ route('feed') }}" class="bg-[#00E676] hover:bg-[#00c853] text-black font-bold px-4 py-2 rounded-xl transition inline-flex items-center gap-2">
+                    <i class="fas fa-images"></i> Ver fotos de mis amigos
+                </a>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($friends as $friend)
                     <a href="{{ route('perfil.show', $friend->id) }}"
