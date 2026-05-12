@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('rutinas_ejercicios', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('rutina_guardada_id')->constrained()->onDelete('cascade');
-            $table->foreignId('musculo_id')->constrained();
+            $table->foreignId('rutina_guardada_id')->constrained('rutinas_guardadas')->onDelete('cascade');
+            $table->foreignId('musculo_id')->constrained('grupos_musculares')->onDelete('cascade');
             $table->string('ejercicio');
             $table->integer('series')->nullable();
             $table->integer('repeticiones')->nullable();

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('rutinas_guardadas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('nombre');
             $table->text('descripcion')->nullable();
             $table->timestamps();

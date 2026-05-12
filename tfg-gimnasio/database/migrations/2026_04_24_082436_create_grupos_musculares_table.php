@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('grupos_musculares', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('dia_entreno_id')->constrained()->onDelete('cascade');
+            $table->foreignId('dia_entreno_id')->constrained('dias_entreno')->onDelete('cascade');
             $table->string('nombre'); // "Pecho", "Hombro", "Tríceps"
             $table->integer('orden')->default(0);
             $table->timestamps();
